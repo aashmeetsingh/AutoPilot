@@ -2,27 +2,24 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+/**
+ * This is the configuration block to customize your React Native Android app.
+ * By default you don't need to apply any configuration, just uncomment the lines you need.
+ */
 react {
-    /* Folders */
-    root = file("../")
-    reactNativeDir = file("../node_modules/react-native")
-    codegenDir = file("../node_modules/@react-native/codegen")
-    cliFile = file("../node_modules/react-native/cli.js")
-
-    /* Variants */
-    debuggableVariants = ["liteDebug", "debug"]
-
-    /* Bundling */
-    bundleAssetName = "index.android.bundle"
-    entryFile = file("../../index.js")
-    bundleCommand = "bundle"
-
-    /* Hermes Commands */
-    hermesCommand = "../node_modules/react-native/sdks/hermesc/%OS-BIN%/hermesc"
+    /* Autolinking */
+    autolinkLibrariesWithApp()
 }
 
+/**
+ * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
+ */
 def enableProguardInReleaseBuilds = false
-def jscFlavor = 'org.webkit:android-jsc:+'
+
+/**
+ * The preferred build flavor of JavaScriptCore (JSC)
+ */
+def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -30,15 +27,13 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace "ai.runanywhere.starter"
-
     defaultConfig {
         applicationId "ai.runanywhere.starter"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0.0"
+        versionName "1.0"
     }
-
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -47,24 +42,37 @@ android {
             keyPassword 'android'
         }
     }
-
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
+            // Caution! In production, you need to generate your own keystore file.
+            // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
+
+    // Handle duplicate native libraries from different sources
+    packagingOptions {
+        pickFirsts = [
+            "**/libc++_shared.so",
+            "**/libjsi.so",
+            "**/libfbjni.so",
+            "**/libfolly_runtime.so",
+            "**/libreactnative.so"
+        ]
+    }
 }
 
 dependencies {
+    // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
-    implementation("com.facebook.react:flipper-integration")
 
-    if (hermesEnabled.toBoolean()) {
+    def isHermesEnabled = project.hasProperty("hermesEnabled") ? project.hermesEnabled.toBoolean() : true
+    if (isHermesEnabled) {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor

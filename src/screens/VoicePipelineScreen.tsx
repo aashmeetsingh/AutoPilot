@@ -5,14 +5,28 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Platform,
+  NativeModules,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import RNFS from 'react-native-fs';
-import Sound from 'react-native-sound';
 import { RunAnywhere, VoiceSessionEvent, VoiceSessionHandle } from '@runanywhere/core';
 import { AppColors } from '../theme';
 import { useModelService } from '../services/ModelService';
 import { ModelLoaderWidget, AudioVisualizer } from '../components';
+
+// Conditionally import Sound - disabled on iOS via react-native.config.js
+let Sound: any = null;
+if (Platform.OS === 'android') {
+  try {
+    Sound = require('react-native-sound').default;
+  } catch (e) {
+    console.log('react-native-sound not available');
+  }
+}
+
+// iOS uses NativeAudioModule
+const { NativeAudioModule } = NativeModules;
 
 interface ConversationMessage {
   role: 'user' | 'assistant';
@@ -36,7 +50,8 @@ export const VoicePipelineScreen: React.FC = () => {
   
   // Refs for session and audio
   const sessionRef = useRef<VoiceSessionHandle | null>(null);
-  const currentSoundRef = useRef<Sound | null>(null);
+  const currentSoundRef = useRef<any>(null);
+  const isPlayingRef = useRef<boolean>(false);
 
   // Handle voice session events per docs:
   // https://docs.runanywhere.ai/react-native/voice-agent#voicesessionevent
@@ -127,32 +142,44 @@ export const VoicePipelineScreen: React.FC = () => {
     }
   }, []);
 
-  // Play synthesized audio response
+  // Play synthesized audio response - platform-specific
   const playResponseAudio = async (base64Audio: string) => {
     try {
-      // Convert base64 float32 PCM to WAV and save
-      const wavData = createWavFromBase64Float32(base64Audio, 22050); // Piper uses 22050 Hz
-      const tempPath = `${RNFS.TemporaryDirectoryPath}/voice_response_${Date.now()}.wav`;
-      await RNFS.writeFile(tempPath, wavData, 'base64');
-
-      // Play the audio
-      const sound = new Sound(tempPath, '', (error) => {
-        if (error) {
-          console.error('Failed to load sound:', error);
-          return;
-        }
-        
-        currentSoundRef.current = sound;
+      if (Platform.OS === 'ios' && NativeAudioModule) {
+        // iOS: Use NativeAudioModule
+        isPlayingRef.current = true;
         setAudioLevel(0.8);
-        
-        sound.play((success) => {
-          sound.release();
-          currentSoundRef.current = null;
-          setAudioLevel(0.3);
+        await NativeAudioModule.playAudioBase64(base64Audio, 22050);
+        isPlayingRef.current = false;
+        setAudioLevel(0.3);
+      } else if (Platform.OS === 'android' && Sound) {
+        // Android: Use react-native-sound
+        const wavData = createWavFromBase64Float32(base64Audio, 22050);
+        const tempPath = `${RNFS.TemporaryDirectoryPath}/voice_response_${Date.now()}.wav`;
+        await RNFS.writeFile(tempPath, wavData, 'base64');
+
+        const sound = new Sound(tempPath, '', (error: any) => {
+          if (error) {
+            console.error('Failed to load sound:', error);
+            return;
+          }
+          
+          currentSoundRef.current = sound;
+          setAudioLevel(0.8);
+          
+          sound.play((success: boolean) => {
+            sound.release();
+            currentSoundRef.current = null;
+            setAudioLevel(0.3);
+          });
         });
-      });
+      } else {
+        console.warn('No audio playback module available');
+      }
     } catch (error) {
       console.error('Error playing audio:', error);
+      isPlayingRef.current = false;
+      setAudioLevel(0.3);
     }
   };
 
@@ -240,8 +267,11 @@ export const VoicePipelineScreen: React.FC = () => {
 
   const stopVoiceAgent = async () => {
     try {
-      // Stop any playing audio
-      if (currentSoundRef.current) {
+      // Stop any playing audio - platform-specific
+      if (Platform.OS === 'ios' && isPlayingRef.current && NativeAudioModule) {
+        await NativeAudioModule.stopPlayback();
+        isPlayingRef.current = false;
+      } else if (currentSoundRef.current) {
         currentSoundRef.current.stop(() => {
           currentSoundRef.current?.release();
           currentSoundRef.current = null;

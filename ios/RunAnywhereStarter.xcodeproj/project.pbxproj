@@ -15,8 +15,8 @@
 		7699B88040F8A987B510C191 /* libPods-RunAnywhereStarter-RunAnywhereStarterTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-RunAnywhereStarter-RunAnywhereStarterTests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		95FAA6247F992A3A1B818127 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
-		NATIVE_AUDIO_SWIFT /* NativeAudioModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = NATIVE_AUDIO_SWIFT_REF /* NativeAudioModule.swift */; };
 		NATIVE_AUDIO_OBJC /* NativeAudioModule.m in Sources */ = {isa = PBXBuildFile; fileRef = NATIVE_AUDIO_OBJC_REF /* NativeAudioModule.m */; };
+		NATIVE_AUDIO_SWIFT /* NativeAudioModule.swift in Sources */ = {isa = PBXBuildFile; fileRef = NATIVE_AUDIO_SWIFT_REF /* NativeAudioModule.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -47,10 +47,10 @@
 		5DCACB8F33CDC322A6C60F78 /* libPods-RunAnywhereStarter.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-RunAnywhereStarter.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = RunAnywhereStarter/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-RunAnywhereStarter-RunAnywhereStarterTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunAnywhereStarter-RunAnywhereStarterTests.release.xcconfig"; path = "Target Support Files/Pods-RunAnywhereStarter-RunAnywhereStarterTests/Pods-RunAnywhereStarter-RunAnywhereStarterTests.release.xcconfig"; sourceTree = "<group>"; };
-		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		NATIVE_AUDIO_SWIFT_REF /* NativeAudioModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NativeAudioModule.swift; path = RunAnywhereStarter/NativeAudioModule.swift; sourceTree = "<group>"; };
-		NATIVE_AUDIO_OBJC_REF /* NativeAudioModule.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NativeAudioModule.m; path = RunAnywhereStarter/NativeAudioModule.m; sourceTree = "<group>"; };
 		BRIDGING_HEADER_REF /* RunAnywhereStarter-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = "RunAnywhereStarter-Bridging-Header.h"; path = "RunAnywhereStarter/RunAnywhereStarter-Bridging-Header.h"; sourceTree = "<group>"; };
+		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		NATIVE_AUDIO_OBJC_REF /* NativeAudioModule.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = NativeAudioModule.m; path = RunAnywhereStarter/NativeAudioModule.m; sourceTree = "<group>"; };
+		NATIVE_AUDIO_SWIFT_REF /* NativeAudioModule.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = NativeAudioModule.swift; path = RunAnywhereStarter/NativeAudioModule.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */

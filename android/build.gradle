@@ -1,34 +1,53 @@
 buildscript {
     ext {
-        buildToolsVersion = "34.0.0"
+        buildToolsVersion = "36.0.0"
         minSdkVersion = 24
-        compileSdkVersion = 34
-        targetSdkVersion = 34
-        ndkVersion = "26.1.10909125"
-        kotlinVersion = "1.9.22"
+        compileSdkVersion = 36
+        targetSdkVersion = 36
+        ndkVersion = "27.1.12297006"
+        kotlinVersion = "2.1.20"
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:8.3.0")
+        classpath("com.android.tools.build:gradle")
         classpath("com.facebook.react:react-native-gradle-plugin")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
     }
 }
 
 apply plugin: "com.facebook.react.rootproject"
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven {
-            url("$rootDir/../node_modules/react-native/android")
-        }
-        maven {
-            url("$rootDir/../node_modules/jsc-android/dist")
+// =============================================================================
+// Fix: Node.js not found when running from Android Studio
+// Android Studio doesn't inherit terminal PATH, so we need to explicitly set it
+// =============================================================================
+def nodeDir = "/opt/homebrew/bin"
+def nodePath = "${nodeDir}/node"
+
+// Check if node exists in common locations
+if (!file(nodePath).exists()) {
+    if (file("/usr/local/bin/node").exists()) {
+        nodeDir = "/usr/local/bin"
+        nodePath = "/usr/local/bin/node"
+    } else if (file("/usr/bin/node").exists()) {
+        nodeDir = "/usr/bin"
+        nodePath = "/usr/bin/node"
+    }
+}
+
+// Set NODE_BINARY globally so React Native gradle plugin can find it
+ext.NODE_BINARY = nodePath
+
+// Fix PATH for codegen tasks using taskGraph
+gradle.taskGraph.whenReady { taskGraph ->
+    def fullPath = "${nodeDir}:/usr/local/bin:/usr/bin:" + (System.getenv("PATH") ?: "")
+    taskGraph.allTasks.each { task ->
+        if (task instanceof Exec) {
+            task.environment("PATH", fullPath)
+            task.environment("NODE_BINARY", nodePath)
         }
     }
 }

@@ -7,6 +7,8 @@ import {
   StyleSheet,
   NativeModules,
   Alert,
+  Platform,
+  PermissionsAndroid,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { RunAnywhere } from '@runanywhere/core';
@@ -48,6 +50,24 @@ export const SpeechToTextScreen: React.FC = () => {
         console.error('[STT] NativeAudioModule not available');
         Alert.alert('Error', 'Native audio module not available. Please rebuild the app.');
         return;
+      }
+
+      // Request microphone permission on Android
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
+          {
+            title: 'Microphone Permission',
+            message: 'This app needs access to your microphone for speech recognition.',
+            buttonNeutral: 'Ask Me Later',
+            buttonNegative: 'Cancel',
+            buttonPositive: 'OK',
+          }
+        );
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert('Permission Denied', 'Microphone permission is required for speech recognition.');
+          return;
+        }
       }
 
       console.warn('[STT] Starting native recording...');

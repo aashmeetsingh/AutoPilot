@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 // Note: react-native-screens is shimmed in index.js for iOS New Architecture compatibility
 import { RunAnywhere, SDKEnvironment } from '@runanywhere/core';
 import { ModelServiceProvider, registerDefaultModels } from './services/ModelService';
+import { UserProgressProvider } from './services/UserProgressService';
 import { AppColors } from './theme';
 import {
   HomeScreen,
@@ -15,6 +16,10 @@ import {
   SpeechToTextScreen,
   TextToSpeechScreen,
   VoicePipelineScreen,
+  PracticeScreen,
+  ConversationPracticeScreen,
+  PronunciationPracticeScreen,
+  GrammarPracticeScreen,
 } from './screens';
 import { RootStackParamList } from './navigation/types';
 
@@ -54,59 +59,81 @@ const App: React.FC = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ModelServiceProvider>
-        <StatusBar barStyle="light-content" backgroundColor={AppColors.primaryDark} />
-        <NavigationContainer>
-          <Stack.Navigator
-            screenOptions={{
-              headerStyle: {
-                backgroundColor: AppColors.primaryDark,
-                elevation: 0,
-                shadowOpacity: 0,
-              },
-              headerTintColor: AppColors.textPrimary,
-              headerTitleStyle: {
-                fontWeight: '700',
-                fontSize: 18,
-              },
-              cardStyle: {
-                backgroundColor: AppColors.primaryDark,
-              },
-              // iOS-like animations
-              ...TransitionPresets.SlideFromRightIOS,
-            }}
-          >
-            <Stack.Screen
-              name="Home"
-              component={HomeScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen
-              name="Chat"
-              component={ChatScreen}
-              options={{ title: 'Chat' }}
-            />
-            <Stack.Screen
-              name="ToolCalling"
-              component={ToolCallingScreen}
-              options={{ title: 'Tool Calling' }}
-            />
-            <Stack.Screen
-              name="SpeechToText"
-              component={SpeechToTextScreen}
-              options={{ title: 'Speech to Text' }}
-            />
-            <Stack.Screen
-              name="TextToSpeech"
-              component={TextToSpeechScreen}
-              options={{ title: 'Text to Speech' }}
-            />
-            <Stack.Screen
-              name="VoicePipeline"
-              component={VoicePipelineScreen}
-              options={{ title: 'Voice Pipeline' }}
-            />
-          </Stack.Navigator>
-        </NavigationContainer>
+        <UserProgressProvider>
+          <StatusBar barStyle="light-content" backgroundColor={AppColors.primaryDark} />
+          <NavigationContainer>
+            <Stack.Navigator
+              screenOptions={{
+                headerStyle: {
+                  backgroundColor: AppColors.primaryDark,
+                  elevation: 0,
+                  shadowOpacity: 0,
+                },
+                headerTintColor: AppColors.textPrimary,
+                headerTitleStyle: {
+                  fontWeight: '700',
+                  fontSize: 18,
+                },
+                cardStyle: {
+                  backgroundColor: AppColors.primaryDark,
+                },
+                // iOS-like animations
+                ...TransitionPresets.SlideFromRightIOS,
+              }}
+            >
+              <Stack.Screen
+                name="Home"
+                component={HomeScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen
+                name="Chat"
+                component={ChatScreen}
+                options={{ title: 'Chat' }}
+              />
+              <Stack.Screen
+                name="ToolCalling"
+                component={ToolCallingScreen}
+                options={{ title: 'Tool Calling' }}
+              />
+              <Stack.Screen
+                name="Practice"
+                component={PracticeScreen}
+                options={{ title: 'Practice' }}
+              />
+              <Stack.Screen
+                name="ConversationPractice"
+                component={ConversationPracticeScreen}
+                options={{ title: 'Conversation Practice' }}
+              />
+              <Stack.Screen
+                name="PronunciationPractice"
+                component={PronunciationPracticeScreen}
+                options={{ title: 'Pronunciation Practice' }}
+              />
+              <Stack.Screen
+                name="GrammarPractice"
+                component={GrammarPracticeScreen}
+                options={{ title: 'Grammar Practice' }}
+              />
+              <Stack.Screen
+                name="SpeechToText"
+                component={SpeechToTextScreen}
+                options={{ title: 'Speech to Text' }}
+              />
+              <Stack.Screen
+                name="TextToSpeech"
+                component={TextToSpeechScreen}
+                options={{ title: 'Text to Speech' }}
+              />
+              <Stack.Screen
+                name="VoicePipeline"
+                component={VoicePipelineScreen}
+                options={{ title: 'Voice Pipeline' }}
+              />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </UserProgressProvider>
       </ModelServiceProvider>
     </GestureHandlerRootView>
   );

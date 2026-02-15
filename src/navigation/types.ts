@@ -5,4 +5,9 @@ export type RootStackParamList = {
   SpeechToText: undefined;
   TextToSpeech: undefined;
   VoicePipeline: undefined;
+  Practice: undefined;
+  ConversationPractice: undefined;
+  PronunciationPractice: undefined;
+  GrammarPractice: undefined;
+  Progress: undefined;
 };

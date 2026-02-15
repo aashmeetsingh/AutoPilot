@@ -5,11 +5,9 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { AppColors } from '../theme';
-import { FeatureCard } from '../components';
 import { RootStackParamList } from '../navigation/types';
 
 type HomeScreenProps = {
@@ -19,116 +17,178 @@ type HomeScreenProps = {
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <LinearGradient
-        colors={[AppColors.primaryDark, '#0F1629', AppColors.primaryMid]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.gradient}
-      >
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
+      <StatusBar barStyle="dark-content" />
+  
           {/* Header */}
-          <View style={styles.header}>
-            <View style={styles.logoContainer}>
-              <LinearGradient
-                colors={[AppColors.accentCyan, AppColors.accentViolet]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={styles.logoGradient}
-              >
-                <Text style={styles.logoIcon}>⚡</Text>
-              </LinearGradient>
-            </View>
-            <View style={styles.headerText}>
-              <Text style={styles.title}>RunAnywhere</Text>
-              <Text style={styles.subtitle}>React Native SDK Starter</Text>
-            </View>
+    <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <View style={styles.blueDot} />
+        </View>
+        <View style={styles.headerRight}>
+          <View style={styles.statContainer}>
+            <Text style={styles.lightning}>⚡</Text>
+            <Text style={styles.statText}>1,247</Text>
           </View>
+          <View style={styles.statContainer}>
+            <Text style={styles.flame}>🔥</Text>
+            <Text style={styles.statText}>7</Text>
+          </View>
+          <TouchableOpacity>
+            <Text style={styles.bell}>🔔</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+            <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Welcome Section */}
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeText}>Welcome back</Text>
+          <Text style={styles.userName}>Aashmeet Singh</Text>
+        </View>
 
-          {/* Privacy Banner */}
-          <View style={styles.privacyBanner}>
-            <Text style={styles.privacyIcon}>🔒</Text>
-            <View style={styles.privacyText}>
-              <Text style={styles.privacyTitle}>Privacy-First On-Device AI</Text>
-              <Text style={styles.privacySubtitle}>
-                All AI processing happens locally on your device. No data ever leaves your phone.
+        {/* AI Recommendation Card */}
+        <View style={styles.recommendationCard}>
+          <View style={styles.recommendationHeader}>
+            <View style={styles.aiIcon}>
+              <Text style={styles.aiIconText}>✨</Text>
+            </View>
+            <View style={styles.recommendationTextContainer}>
+              <Text style={styles.recommendationTitle}>AI Recommendation</Text>
+              <Text style={styles.recommendationSubtitle}>
+                Today you should practice Tenses to unlock Advanced level.
               </Text>
             </View>
           </View>
+        </View>
 
-          {/* Feature Cards Grid */}
-          <View style={styles.gridContainer}>
-            <View style={styles.row}>
-              <FeatureCard
-                title="Chat"
-                subtitle="LLM Text Generation"
-                icon="chat"
-                gradientColors={[AppColors.accentCyan, '#0EA5E9']}
-                onPress={() => navigation.navigate('Chat')}
-              />
-              <FeatureCard
-                title="Tools"
-                subtitle="Tool Calling"
-                icon="tools"
-                gradientColors={[AppColors.accentOrange, '#E67E22']}
-                onPress={() => navigation.navigate('ToolCalling')}
-              />
-            </View>
-            <View style={styles.row}>
-              <FeatureCard
-                title="Speech"
-                subtitle="Speech to Text"
-                icon="mic"
-                gradientColors={[AppColors.accentViolet, '#7C3AED']}
-                onPress={() => navigation.navigate('SpeechToText')}
-              />
-              <FeatureCard
-                title="Voice"
-                subtitle="Text to Speech"
-                icon="volume"
-                gradientColors={[AppColors.accentPink, '#DB2777']}
-                onPress={() => navigation.navigate('TextToSpeech')}
-              />
-            </View>
-            <View style={styles.row}>
-              <FeatureCard
-                title="Pipeline"
-                subtitle="Voice Agent"
-                icon="pipeline"
-                gradientColors={[AppColors.accentGreen, '#059669']}
-                onPress={() => navigation.navigate('VoicePipeline')}
-              />
-              <View style={{ flex: 1, margin: 8 }} />
+        {/* Current Level Section */}
+        <View style={styles.levelSection}>
+          <Text style={styles.currentLevelLabel}>Current Level</Text>
+          <View style={styles.levelHeader}>
+            <Text style={styles.levelNumber}>Level 3</Text>
+            <View style={styles.intermediateBadge}>
+              <Text style={styles.intermediateBadgeText}>Intermediate</Text>
             </View>
           </View>
 
-          {/* Model Info Section */}
-          <View style={styles.infoSection}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>🤖</Text>
-              <Text style={styles.infoLabel}>LLM</Text>
-              <View style={{ flex: 1 }} />
-              <Text style={styles.infoValue}>SmolLM2 360M</Text>
+          {/* Progress Info */}
+          <View style={styles.progressInfo}>
+            <Text style={styles.progressText}>Progress to Level 4</Text>
+            <Text style={styles.xpText}>1247 / 2,000 XP</Text>
+          </View>
+
+          {/* Progress Bar */}
+          <View style={styles.progressBarContainer}>
+            <View style={[styles.progressBarFill, { width: '62.35%' }]} />
+          </View>
+
+          {/* Skills Unlocked */}
+          <View style={styles.skillsUnlocked}>
+            <View style={styles.skillsRow}>
+              <View style={styles.checkCircle}>
+                <Text style={styles.checkMark}>✓</Text>
+              </View>
+              <Text style={styles.skillsText}>3 of 5 skills unlocked</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>🎤</Text>
-              <Text style={styles.infoLabel}>STT</Text>
-              <View style={{ flex: 1 }} />
-              <Text style={styles.infoValue}>Whisper Tiny</Text>
+            <Text style={styles.percentageText}>60%</Text>
+          </View>
+        </View>
+
+        {/* Continue Learning Button */}
+        <TouchableOpacity style={styles.continueButton} activeOpacity={0.8}>
+          <Text style={styles.continueButtonText}>Continue Learning</Text>
+        </TouchableOpacity>
+
+        {/* Daily Exercises Section */}
+        <View style={styles.dailyExercisesSection}>
+          <Text style={styles.dailyExercisesTitle}>Daily Exercises</Text>
+          
+          <View style={styles.exercisesGrid}>
+            {/* Row 1 */}
+            <View style={styles.exerciseRow}>
+              <View style={styles.exerciseCard}>
+                <View style={styles.exerciseIconContainer}>
+                  <Text style={styles.exerciseIcon}>🔥</Text>
+                </View>
+                <Text style={styles.exerciseLabel}>Typing</Text>
+                <View style={styles.xpBadge}>
+                  <Text style={styles.xpIcon}>⚡</Text>
+                  <Text style={styles.xpValue}>+25</Text>
+                </View>
+              </View>
+
+              <View style={styles.exerciseCard}>
+                <View style={styles.exerciseIconContainer}>
+                  <Text style={styles.exerciseIcon}>🗣️</Text>
+                </View>
+                <Text style={styles.exerciseLabel}>Text-to-Speech</Text>
+                <View style={styles.xpBadge}>
+                  <Text style={styles.xpIcon}>⚡</Text>
+                  <Text style={styles.xpValue}>+25</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoIcon}>🔊</Text>
-              <Text style={styles.infoLabel}>TTS</Text>
-              <View style={{ flex: 1 }} />
-              <Text style={styles.infoValue}>Piper TTS</Text>
+
+            {/* Row 2 */}
+            <View style={styles.exerciseRow}>
+              <View style={styles.exerciseCard}>
+                <View style={styles.exerciseIconContainer}>
+                  <Text style={styles.exerciseIcon}>🎤</Text>
+                </View>
+                <Text style={styles.exerciseLabel}>Speech-to-Text</Text>
+                <View style={styles.xpBadge}>
+                  <Text style={styles.xpIcon}>⚡</Text>
+                  <Text style={styles.xpValue}>+25</Text>
+                </View>
+              </View>
+
+              <View style={styles.exerciseCard}>
+                <View style={styles.exerciseIconContainer}>
+                  <View style={styles.abcBox}>
+                    <Text style={styles.abcText}>🔤</Text>
+                  </View>
+                  <Text style={styles.exerciseLabel}>Written Practice</Text>
+                <View style={styles.xpBadge}>
+                  <Text style={styles.xpIcon}>⚡</Text>
+                  <Text style={styles.xpValue}>+25</Text>
+                </View>
+                </View>
+              </View>
             </View>
           </View>
-        </ScrollView>
-      </LinearGradient>
+        </View>
+
+        {/* Bottom Spacing */}
+        <View style={{ height: 100 }} />
+
+      </ScrollView>
+
+      {/* Bottom Navigation */}
+    <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navItem}>
+          <Text style={styles.navIconActive}>🏠</Text>
+          <Text style={styles.navLabelActive}>Home</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navItem}>
+          <Text style={styles.navIcon}>💬</Text>
+          <Text style={styles.navLabel}>Practice</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navItem}>
+          <Text style={styles.navIcon}>📈</Text>
+          <Text style={styles.navLabel}>Progress</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navItem}>
+          <Text style={styles.navIcon}>🏆</Text>
+          <Text style={styles.navLabel}>Ranking</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navItem}>
+          <Text style={styles.navIcon}>👤</Text>
+          <Text style={styles.navLabel}>Profile</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 };
@@ -136,7 +196,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.primaryDark,
+    backgroundColor: '#F5F7FA',
   },
   gradient: {
     flex: 1,
@@ -150,100 +210,330 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 40,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 15,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    marginTop: 30,
+    marginBottom: 20,
   },
-  logoContainer: {
-    marginRight: 16,
-  },
-  logoGradient: {
-    width: 60,
-    height: 60,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: AppColors.accentCyan,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-  },
-  logoIcon: {
-    fontSize: 32,
-  },
-  headerText: {
-    flex: 1,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: AppColors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: AppColors.accentCyan,
-    marginTop: 2,
-  },
-  privacyBanner: {
+  headerLeft: {
     flexDirection: 'row',
-    padding: 20,
-    backgroundColor: AppColors.surfaceCard + 'CC',
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: AppColors.accentCyan + '33',
-    marginBottom: 32,
+    alignItems: 'center',
   },
-  privacyIcon: {
-    fontSize: 28,
-    marginRight: 16,
+  blueDot: {
+    width: 25,
+    height: 25,
+    borderRadius: 12.5,
+    backgroundColor: '#2F5FED',
   },
-  privacyText: {
-    flex: 1,
+  dot: {
+    width: 25,
+    height: 25,
+    borderRadius: 12.5,
+    backgroundColor: '#2F5FED',
   },
-  privacyTitle: {
-    fontSize: 16,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  statContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  lightning: {
+    fontSize: 14,
+  },
+  flame: {
+    fontSize: 14,
+  },
+  bell: {
+    fontSize: 18,
+  },
+ statText: {
+    fontSize: 14,
     fontWeight: '600',
-    color: AppColors.textPrimary,
+    color: '#1A1A1A',
+  },
+  welcomeSection: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  welcomeText: {
+    fontSize: 14,
+    color: '#6B7280',
     marginBottom: 4,
   },
-  privacySubtitle: {
-    fontSize: 12,
-    color: AppColors.textSecondary,
-    lineHeight: 18,
+  userName: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1A1A1A',
   },
-  gridContainer: {
+  recommendationCard: {
+    backgroundColor: '#E8EDFA',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 24,
   },
-  row: {
+  recommendationHeader: {
     flexDirection: 'row',
-    marginBottom: 16,
-    gap: 0,
+    gap: 12,
   },
-  infoSection: {
-    padding: 20,
-    backgroundColor: AppColors.surfaceCard + '80',
+  aiIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  aiIconText: {
+    fontSize: 20,
+  },
+  recommendationTextContainer: {
+    flex: 1,
+  },
+  recommendationTitle: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  recommendationSubtitle: {
+    fontSize: 13,
+    color: '#4B5563',
+    lineHeight: 18,
+  },
+  levelSection: {
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 20,
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: AppColors.textMuted + '1A',
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
-  infoRow: {
+  currentLevelLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 8,
+  },
+  levelHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
+    marginBottom: 16,
+    gap: 12,
   },
-  infoIcon: {
-    fontSize: 20,
-    marginRight: 12,
+  levelNumber: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1A1A1A',
   },
-  infoLabel: {
-    fontSize: 14,
-    color: AppColors.textSecondary,
+  intermediateBadge: {
+    backgroundColor: '#E0EAFF',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  infoValue: {
+  intermediateBadgeText: {
     fontSize: 12,
-    color: AppColors.accentCyan,
-    fontWeight: '500',
+    fontWeight: '600',
+    color: '#2F5FED',
+  },
+  progressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  progressText: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  xpText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1A1A1A',
+  },
+  progressBarContainer: {
+    height: 8,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 4,
+    marginBottom: 16,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#2F5FED',
+    borderRadius: 4,
+  },
+  skillsUnlocked: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  skillsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  checkCircle: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: '#10B981',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkMark: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  skillsText: {
+    fontSize: 13,
+    color: '#1A1A1A',
+  },
+  percentageText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#10B981',
+  },
+  continueButton: {
+    backgroundColor: '#2F5FED',
+    marginHorizontal: 20,
+    borderRadius: 28,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginBottom: 32,
+    shadowColor: '#2F5FED',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  dailyExercisesSection: {
+    paddingHorizontal: 20,
+  },
+  dailyExercisesTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 16,
+  },
+  exercisesGrid: {
+    gap: 12,
+  },
+  exerciseRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
+  },
+  exerciseCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    alignItems: 'center',
+    minHeight: 120,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  exerciseIconContainer: {
+    marginBottom: 8,
+  },
+  exerciseIcon: {
+    fontSize: 32,
+  },
+  exerciseLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  xpBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 2,
+  },
+  xpIcon: {
+    fontSize: 10,
+  },
+  xpValue: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#92400E',
+  },
+  abcBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+  
+  },
+  abcText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  navIcon: {
+    fontSize: 20,
+    opacity: 0.5,
+  },
+  navIconActive: {
+    fontSize: 20,
+  },
+  navLabel: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  navLabelActive: {
+    fontSize: 11,
+    color: '#2F5FED',
+    fontWeight: '600',
   },
 });

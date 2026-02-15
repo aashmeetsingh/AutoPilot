@@ -15,7 +15,7 @@ export const AppColors = {
   accentPink: '#EC4899',
   accentGreen: '#10B981',
   accentOrange: '#F59E0B',
-
+  accentSky: '#38BDF8',
   // Text colors
   textPrimary: '#F1F5F9',
   textSecondary: '#94A3B8',

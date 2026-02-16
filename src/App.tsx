@@ -20,6 +20,7 @@ import {
   ConversationPracticeScreen,
   PronunciationPracticeScreen,
   GrammarPracticeScreen,
+  ProgressScreen,
 } from './screens';
 import { RootStackParamList } from './navigation/types';
 
@@ -130,6 +131,11 @@ const App: React.FC = () => {
                 name="VoicePipeline"
                 component={VoicePipelineScreen}
                 options={{ title: 'Voice Pipeline' }}
+              />
+              <Stack.Screen
+                name="Progress"
+                component={ProgressScreen}
+                options={{ title: 'Progress' }}
               />
             </Stack.Navigator>
           </NavigationContainer>

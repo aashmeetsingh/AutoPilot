@@ -8,52 +8,24 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+
+import { BottomNav } from '../components/BottomNav';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
-import { useUserProgress } from '../services/UserProgressService';
 
 type PracticeScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, 'Practice'>;
 };
 
 export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) => {
-  const userProgress = useUserProgress();
   const [selectedCategory, setSelectedCategory] = useState('All');
 
   const categories = ['All', 'Grammar', 'Vocabulary', 'Speaking', 'Listening'];
 
   const practiceActivities = [
     {
-      id: 'conversation',
-      title: 'Conversation Practice',
-      category: 'Speaking',
-      difficulty: 'Intermediate',
-      duration: '20 min',
-      xp: 75,
-      icon: '🎤',
-      color: '#E0EAFF',
-      completed: false,
-      progress: 0,
-      description: 'Practice real conversations with an AI tutor on various scenarios',
-      navigate: () => navigation.navigate('ConversationPractice'),
-    },
-    {
-      id: 'pronunciation',
-      title: 'Pronunciation Practice',
-      category: 'Speaking',
-      difficulty: 'Beginner',
-      duration: '15 min',
-      xp: 50,
-      icon: '🗣️',
-      color: '#FEF3C7',
-      completed: false,
-      progress: 0,
-      description: 'Listen and repeat phrases to improve your pronunciation',
-      navigate: () => navigation.navigate('PronunciationPractice'),
-    },
-    {
-      id: 'grammar',
-      title: 'Grammar Practice',
+      id: 1,
+      title: 'Present Tense Practice',
       category: 'Grammar',
       difficulty: 'Beginner',
       duration: '15 min',
@@ -62,11 +34,33 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
       color: '#E0EAFF',
       completed: false,
       progress: 0,
-      description: 'Get AI feedback on your grammar with detailed corrections',
-      navigate: () => navigation.navigate('GrammarPractice'),
     },
     {
-      id: 'listening',
+      id: 2,
+      title: 'Airport Conversations',
+      category: 'Speaking',
+      difficulty: 'Intermediate',
+      duration: '20 min',
+      xp: 75,
+      icon: '✈️',
+      color: '#FEF3C7',
+      completed: false,
+      progress: 60,
+    },
+    {
+      id: 3,
+      title: 'Business Vocabulary',
+      category: 'Vocabulary',
+      difficulty: 'Advanced',
+      duration: '25 min',
+      xp: 100,
+      icon: '💼',
+      color: '#E8EDFA',
+      completed: false,
+      progress: 30,
+    },
+    {
+      id: 4,
       title: 'Podcast Listening',
       category: 'Listening',
       difficulty: 'Intermediate',
@@ -76,12 +70,22 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
       color: '#DCFCE7',
       completed: true,
       progress: 100,
-      description: 'Listen to authentic conversations and test comprehension',
-      navigate: () => {},
     },
     {
-      id: 'vocabulary',
-      title: 'Vocabulary Builder',
+      id: 5,
+      title: 'Past Tense Exercises',
+      category: 'Grammar',
+      difficulty: 'Beginner',
+      duration: '15 min',
+      xp: 50,
+      icon: '📚',
+      color: '#FCE7F3',
+      completed: false,
+      progress: 0,
+    },
+    {
+      id: 6,
+      title: 'Daily Phrases',
       category: 'Vocabulary',
       difficulty: 'Beginner',
       duration: '10 min',
@@ -90,26 +94,18 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
       color: '#FEF3C7',
       completed: false,
       progress: 0,
-      description: 'Learn new words in context with real examples',
-      navigate: () => {},
-    },
-    {
-      id: 'writing',
-      title: 'Written Expression',
-      category: 'Grammar',
-      difficulty: 'Advanced',
-      duration: '25 min',
-      xp: 100,
-      icon: '✍️',
-      color: '#FCE7F3',
-      completed: false,
-      progress: 0,
-      description: 'Express yourself through writing with AI feedback',
-      navigate: () => {},
     },
   ];
 
-  const getDifficultyColor = (difficulty: string) => {
+  const navItems = [
+    { icon: '🏠', label: 'Home', isActive: false },
+    { icon: '💬', label: 'Practice', isActive: true },
+    { icon: '📈', label: 'Progress', isActive: false },
+    { icon: '🏆', label: 'Ranking', isActive: false },
+    { icon: '👤', label: 'Profile', isActive: false },
+  ];
+
+  const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case 'Beginner':
         return '#10B981';
@@ -121,11 +117,6 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
         return '#6B7280';
     }
   };
-
-  const filteredActivities =
-    selectedCategory === 'All'
-      ? practiceActivities
-      : practiceActivities.filter((a) => a.category === selectedCategory);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -139,11 +130,11 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
         <View style={styles.headerRight}>
           <View style={styles.statContainer}>
             <Text style={styles.lightning}>⚡</Text>
-            <Text style={styles.statText}>{userProgress.currentXP}</Text>
+            <Text style={styles.statText}>1,247</Text>
           </View>
           <View style={styles.statContainer}>
             <Text style={styles.flame}>🔥</Text>
-            <Text style={styles.statText}>{userProgress.currentStreak}</Text>
+            <Text style={styles.statText}>7</Text>
           </View>
           <TouchableOpacity>
             <Text style={styles.bell}>🔔</Text>
@@ -165,47 +156,30 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
           <View style={styles.dailyGoalHeader}>
             <View>
               <Text style={styles.dailyGoalTitle}>Daily Goal</Text>
-              <Text style={styles.dailyGoalSubtitle}>
-                {userProgress.todayStats.activitiesCompleted} of 5 activities completed
-              </Text>
+              <Text style={styles.dailyGoalSubtitle}>3 of 5 activities completed</Text>
             </View>
             <View style={styles.goalPercentage}>
-              <Text style={styles.goalPercentageText}>
-                {Math.round(
-                  (userProgress.todayStats.activitiesCompleted / 5) * 100
-                )}%
-              </Text>
+              <Text style={styles.goalPercentageText}>60%</Text>
             </View>
           </View>
 
           <View style={styles.dailyProgressBarContainer}>
-            <View
-              style={[
-                styles.dailyProgressBarFill,
-                {
-                  width: `${(userProgress.todayStats.activitiesCompleted / 5) * 100}%`,
-                },
-              ]}
-            />
+            <View style={[styles.dailyProgressBarFill, { width: '60%' }]} />
           </View>
 
           <View style={styles.dailyGoalStats}>
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{userProgress.todayStats.xpEarned}</Text>
+              <Text style={styles.statNumber}>150</Text>
               <Text style={styles.statLabel}>XP Earned</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {Math.round(userProgress.todayStats.timeSpent / 60000)}
-              </Text>
+              <Text style={styles.statNumber}>45</Text>
               <Text style={styles.statLabel}>Minutes</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statNumber}>
-                {userProgress.getTodayActivitiesRemaining()}
-              </Text>
+              <Text style={styles.statNumber}>2</Text>
               <Text style={styles.statLabel}>Remaining</Text>
             </View>
           </View>
@@ -242,16 +216,57 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
           </ScrollView>
         </View>
 
+        {/* Recommended for You */}
+        <View style={styles.recommendedSection}>
+          <View style={styles.recommendedHeader}>
+            <Text style={styles.sectionTitle}>Recommended for You</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAllText}>See All</Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.recommendedScroll}
+          >
+            <View style={styles.recommendedCard}>
+              <View style={styles.recommendedIconContainer}>
+                <Text style={styles.recommendedIcon}>🎯</Text>
+              </View>
+              <Text style={styles.recommendedCardTitle}>Focus on Tenses</Text>
+              <Text style={styles.recommendedCardSubtitle}>
+                Unlock Advanced level
+              </Text>
+              <View style={styles.recommendedBadge}>
+                <Text style={styles.recommendedBadgeText}>AI Suggested</Text>
+              </View>
+            </View>
+
+            <View style={styles.recommendedCard}>
+              <View style={styles.recommendedIconContainer}>
+                <Text style={styles.recommendedIcon}>💡</Text>
+              </View>
+              <Text style={styles.recommendedCardTitle}>Quick Review</Text>
+              <Text style={styles.recommendedCardSubtitle}>
+                5 min daily warmup
+              </Text>
+              <View style={styles.recommendedBadge}>
+                <Text style={styles.recommendedBadgeText}>Popular</Text>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+
         {/* Practice Activities */}
         <View style={styles.activitiesSection}>
-          <Text style={styles.sectionTitle}>Available Activities</Text>
+          <Text style={styles.sectionTitle}>All Activities</Text>
 
-          {filteredActivities.map((activity) => (
+          {practiceActivities.map((activity) => (
             <TouchableOpacity
               key={activity.id}
               style={styles.activityCard}
               activeOpacity={0.7}
-              onPress={activity.navigate}
             >
               <View style={[styles.activityIconBox, { backgroundColor: activity.color }]}>
                 <Text style={styles.activityIcon}>{activity.icon}</Text>
@@ -266,8 +281,6 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
                     </View>
                   )}
                 </View>
-
-                <Text style={styles.activityDescription}>{activity.description}</Text>
 
                 <View style={styles.activityMeta}>
                   <View
@@ -308,8 +321,6 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
                   </View>
                 )}
               </View>
-
-              <Text style={styles.activityArrow}>→</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -319,32 +330,7 @@ export const PracticeScreen: React.FC<PracticeScreenProps> = ({ navigation }) =>
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.navIcon}>🏠</Text>
-          <Text style={styles.navLabel}>Home</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIconActive}>💬</Text>
-          <Text style={styles.navLabelActive}>Practice</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>📈</Text>
-          <Text style={styles.navLabel}>Progress</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>🏆</Text>
-          <Text style={styles.navLabel}>Ranking</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.navItem}>
-          <Text style={styles.navIcon}>👤</Text>
-          <Text style={styles.navLabel}>Profile</Text>
-        </TouchableOpacity>
-      </View>
+      <BottomNav navigation={navigation} active="Practice" />
     </SafeAreaView>
   );
 };
@@ -526,14 +512,80 @@ const styles = StyleSheet.create({
   categoryChipTextActive: {
     color: '#FFFFFF',
   },
-  activitiesSection: {
+  recommendedSection: {
+    marginBottom: 24,
+  },
+  recommendedHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
+    marginBottom: 12,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: '700',
     color: '#1A1A1A',
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: '#2F5FED',
+    fontWeight: '600',
+  },
+  recommendedScroll: {
+    paddingHorizontal: 20,
+    gap: 12,
+  },
+  recommendedCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    width: 160,
+    marginRight: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  recommendedIconContainer: {
+    width: 48,
+    height: 48,
+    backgroundColor: '#F5F7FA',
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 12,
+  },
+  recommendedIcon: {
+    fontSize: 24,
+  },
+  recommendedCardTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    marginBottom: 4,
+  },
+  recommendedCardSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginBottom: 12,
+    lineHeight: 16,
+  },
+  recommendedBadge: {
+    backgroundColor: '#E0EAFF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  recommendedBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#2F5FED',
+  },
+  activitiesSection: {
+    paddingHorizontal: 20,
   },
   activityCard: {
     flexDirection: 'row',
@@ -546,7 +598,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
-    alignItems: 'flex-start',
   },
   activityIconBox: {
     width: 56,
@@ -586,12 +637,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 12,
     fontWeight: '700',
-  },
-  activityDescription: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 8,
-    lineHeight: 16,
   },
   activityMeta: {
     flexDirection: 'row',
@@ -642,45 +687,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2F5FED',
     width: 35,
-  },
-  activityArrow: {
-    fontSize: 18,
-    color: '#2F5FED',
-    marginLeft: 8,
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    paddingTop: 12,
-    paddingBottom: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 8,
-    marginBottom: StatusBar.currentHeight || 0,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  navIcon: {
-    fontSize: 20,
-    opacity: 0.5,
-  },
-  navIconActive: {
-    fontSize: 20,
-  },
-  navLabel: {
-    fontSize: 11,
-    color: '#6B7280',
-  },
-  navLabelActive: {
-    fontSize: 11,
-    color: '#2F5FED',
-    fontWeight: '600',
   },
 });

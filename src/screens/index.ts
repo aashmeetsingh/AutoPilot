@@ -8,3 +8,4 @@ export * from './PracticeScreen';
 export * from './ConversationPracticeScreen';
 export * from './PronunciationPracticeScreen';
 export * from './GrammarPracticeScreen';
+export * from './ProgressScreen';

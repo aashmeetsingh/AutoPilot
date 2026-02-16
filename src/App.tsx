@@ -21,6 +21,8 @@ import {
   PronunciationPracticeScreen,
   GrammarPracticeScreen,
   ProgressScreen,
+  RankingScreen,
+  ProfileScreen,
 } from './screens';
 import { RootStackParamList } from './navigation/types';
 
@@ -136,6 +138,16 @@ const App: React.FC = () => {
                 name="Progress"
                 component={ProgressScreen}
                 options={{ title: 'Progress' }}
+              />
+              <Stack.Screen
+                name="Ranking"
+                component={RankingScreen}
+                options={{ title: 'Ranking' }}
+              />
+              <Stack.Screen
+                name="Profile"
+                component={ProfileScreen}
+                options={{ title: 'Profile' }}
               />
             </Stack.Navigator>
           </NavigationContainer>

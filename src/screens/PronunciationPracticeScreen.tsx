@@ -68,7 +68,7 @@ export const PronunciationPracticeScreen: React.FC<PronunciationPracticeScreenPr
         clearInterval(audioLevelIntervalRef.current);
       }
       if (isRecording && NativeAudioModule) {
-        NativeAudioModule.cancelRecording().catch(() => {});
+        NativeAudioModule.cancelRecording().catch(() => { });
       }
     };
   }, [isRecording]);
@@ -165,7 +165,7 @@ export const PronunciationPracticeScreen: React.FC<PronunciationPracticeScreenPr
 
         // Award XP
         if (calculatedAccuracy > 0) {
-          await userProgress.completeActivity('pronunciation', calculatedAccuracy, 30000);
+          await userProgress.updateXP(currentPhrase.xp);
         }
       }
 

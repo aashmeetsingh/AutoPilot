@@ -8,15 +8,25 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import { RunAnywhere } from '@runanywhere/core';
+import { StackNavigationProp } from '@react-navigation/stack';
 import { AppColors } from '../theme';
 import { useModelService } from '../services/ModelService';
+import { useUserProgress } from '../services/UserProgressService';
 import { ChatMessageBubble, ChatMessage, ModelLoaderWidget } from '../components';
+import { RootStackParamList } from '../navigation/types';
 
-export const ChatScreen: React.FC = () => {
+type ChatScreenProps = {
+  navigation: StackNavigationProp<RootStackParamList, 'Chat'>;
+};
+
+export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
   const modelService = useModelService();
+  const { name, targetLanguage } = useUserProgress();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
@@ -44,16 +54,28 @@ export const ChatScreen: React.FC = () => {
       isUser: true,
       timestamp: new Date(),
     };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInputText('');
     setIsGenerating(true);
     setCurrentResponse('');
 
     try {
+      const lang = targetLanguage || 'Spanish';
+      const userName = name || 'User';
+
+      const systemPrompt = `You are a helpful and patient Language Tutor teaching ${lang} to ${userName}.
+      Your goal is to help them practice and improve.
+      - Correct their mistakes gently but clearly.
+      - Suggest better vocabulary and alternative phrasings.
+      - Keep the conversation engaging in ${lang}, but explain complex concepts in English if they struggle.
+      - Adjust your language complexity to their level.
+      - If asked to roleplay, stay in character.`;
+
       // Per docs: https://docs.runanywhere.ai/react-native/quick-start#6-stream-responses
       const streamResult = await RunAnywhere.generateStream(text, {
-        maxTokens: 256,
-        temperature: 0.8,
+        maxTokens: 512, // Increased for better explanations
+        temperature: 0.7,
+        systemPrompt: systemPrompt,
       });
 
       streamCancelRef.current = streamResult.cancel;
@@ -62,21 +84,30 @@ export const ChatScreen: React.FC = () => {
       // Stream tokens as they arrive
       for await (const token of streamResult.stream) {
         responseRef.current += token;
-        setCurrentResponse(responseRef.current);
+        // Filter out <think> blocks (reasoning models) so user only sees final answer
+        const cleanText = responseRef.current
+          .replace(/<think>[\s\S]*?<\/think>/g, '') // Remove completed think blocks
+          .replace(/<think>[\s\S]*/g, '') // Hide incomplete think blocks
+          .trimStart(); // ongoing stream clean
+        setCurrentResponse(cleanText);
       }
 
       // Get final metrics
       const finalResult = await streamResult.result;
 
+      const cleanFinalText = responseRef.current
+        .replace(/<think>[\s\S]*?<\/think>/g, '')
+        .trim();
+
       // Add assistant message (use ref to get final text due to closure)
       const assistantMessage: ChatMessage = {
-        text: responseRef.current,
+        text: cleanFinalText,
         isUser: false,
         timestamp: new Date(),
         tokensPerSecond: finalResult.performanceMetrics?.tokensPerSecond,
         totalTokens: finalResult.performanceMetrics?.totalTokens,
       };
-      setMessages(prev => [...prev, assistantMessage]);
+      setMessages((prev) => [...prev, assistantMessage]);
       setCurrentResponse('');
       responseRef.current = '';
       setIsGenerating(false);
@@ -87,7 +118,7 @@ export const ChatScreen: React.FC = () => {
         timestamp: new Date(),
         isError: true,
       };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
       setCurrentResponse('');
       setIsGenerating(false);
     }
@@ -103,7 +134,7 @@ export const ChatScreen: React.FC = () => {
           timestamp: new Date(),
           wasCancelled: true,
         };
-        setMessages(prev => [...prev, message]);
+        setMessages((prev) => [...prev, message]);
       }
       setCurrentResponse('');
       responseRef.current = '';
@@ -121,7 +152,7 @@ export const ChatScreen: React.FC = () => {
       style={styles.suggestionChip}
       onPress={() => {
         setInputText(text);
-        handleSend();
+        // handleSend(); // Better to let user review before sending
       }}
     >
       <Text style={styles.suggestionText}>{text}</Text>
@@ -130,16 +161,24 @@ export const ChatScreen: React.FC = () => {
 
   if (!modelService.isLLMLoaded) {
     return (
-      <ModelLoaderWidget
-        title="LLM Model Required"
-        subtitle="Download and load the language model to start chatting"
-        icon="chat"
-        accentColor={AppColors.accentCyan}
-        isDownloading={modelService.isLLMDownloading}
-        isLoading={modelService.isLLMLoading}
-        progress={modelService.llmDownloadProgress}
-        onLoad={modelService.downloadAndLoadLLM}
-      />
+      <View style={{ flex: 1, backgroundColor: '#F5F7FA' }}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>AI Tutor</Text>
+        </View>
+        <ModelLoaderWidget
+          title="LLM Model Required"
+          subtitle="Download and load the language model to start chatting"
+          icon="chat"
+          accentColor={AppColors.primary}
+          isDownloading={modelService.isLLMDownloading}
+          isLoading={modelService.isLLMLoading}
+          progress={modelService.llmDownloadProgress}
+          onLoad={modelService.downloadAndLoadLLM}
+        />
+      </View>
     );
   }
 
@@ -149,25 +188,50 @@ export const ChatScreen: React.FC = () => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>AI Tutor</Text>
+          <View style={styles.onlineBadge}>
+            <View style={styles.onlineDot} />
+            <Text style={styles.onlineText}>Online</Text>
+          </View>
+        </View>
+        <TouchableOpacity onPress={handleClearChat} style={styles.clearButton}>
+          <Text style={styles.clearButtonText}>Clear</Text>
+        </TouchableOpacity>
+      </View>
+
       {messages.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIconContainer}>
-            <Text style={styles.emptyIcon}>💬</Text>
+            <Text style={styles.emptyIcon}>🎓</Text>
           </View>
-          <Text style={styles.emptyTitle}>Start a Conversation</Text>
+          <Text style={styles.emptyTitle}>
+            {targetLanguage ? `Practice ${targetLanguage}` : 'Language Tutor'}
+          </Text>
           <Text style={styles.emptySubtitle}>
-            Ask anything! The AI runs entirely on your device.
+            I'm here to help you learn! Ask me anything or try one of these:
           </Text>
           <View style={styles.suggestionsContainer}>
-            {renderSuggestionChip('Tell me a joke')}
-            {renderSuggestionChip('What is AI?')}
-            {renderSuggestionChip('Write a haiku')}
+            {renderSuggestionChip(`How do you say "Hello" in ${targetLanguage || 'Spanish'}?`)}
+            {renderSuggestionChip('Teach me 3 useful travel phrases')}
+            {renderSuggestionChip(`Correct my grammar: "Me gusta el gato"`)}
+            {renderSuggestionChip('Explain the difference between Ser and Estar')}
           </View>
         </View>
       ) : (
         <FlatList
           ref={flatListRef}
-          data={[...messages, ...(isGenerating ? [{ text: currentResponse || '...', isUser: false, timestamp: new Date() }] : [])]}
+          data={[
+            ...messages,
+            ...(isGenerating
+              ? [{ text: currentResponse || '...', isUser: false, timestamp: new Date() }]
+              : []),
+          ]}
           renderItem={({ item, index }) => (
             <ChatMessageBubble
               message={item as ChatMessage}
@@ -186,7 +250,7 @@ export const ChatScreen: React.FC = () => {
           <TextInput
             style={styles.input}
             placeholder="Type a message..."
-            placeholderTextColor={AppColors.textMuted}
+            placeholderTextColor="#9CA3AF"
             value={inputText}
             onChangeText={setInputText}
             onSubmitEditing={handleSend}
@@ -196,13 +260,13 @@ export const ChatScreen: React.FC = () => {
           {isGenerating ? (
             <TouchableOpacity onPress={handleStop} style={styles.stopButton}>
               <View style={styles.stopIcon}>
-                <Text style={styles.stopIconText}>⏹</Text>
+                <Text style={{ color: '#DC2626', fontSize: 16 }}>⏹</Text>
               </View>
             </TouchableOpacity>
           ) : (
             <TouchableOpacity onPress={handleSend} disabled={!inputText.trim()}>
               <LinearGradient
-                colors={[AppColors.accentCyan, AppColors.accentViolet]}
+                colors={inputText.trim() ? [AppColors.primary, '#4B7BFF'] : ['#E5E7EB', '#E5E7EB']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={styles.sendButton}
@@ -220,10 +284,73 @@ export const ChatScreen: React.FC = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: AppColors.primaryDark,
+    backgroundColor: '#F5F7FA',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 0) + 12 : 50,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    zIndex: 10,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  backButtonText: {
+    fontSize: 20,
+    color: '#374151',
+    fontWeight: '600',
+  },
+  headerTitleContainer: {
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  onlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+    gap: 4,
+  },
+  onlineDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  onlineText: {
+    fontSize: 11,
+    color: '#6B7280',
+  },
+  clearButton: {
+    padding: 8,
+  },
+  clearButtonText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   messageList: {
     padding: 16,
+    paddingBottom: 32,
   },
   emptyState: {
     flex: 1,
@@ -232,28 +359,29 @@ const styles = StyleSheet.create({
     padding: 32,
   },
   emptyIconContainer: {
-    width: 100,
-    height: 100,
-    backgroundColor: AppColors.accentCyan + '20',
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    backgroundColor: '#EFF6FF',
+    borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 24,
   },
   emptyIcon: {
-    fontSize: 48,
+    fontSize: 40,
   },
   emptyTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '700',
-    color: AppColors.textPrimary,
+    color: '#111827',
     marginBottom: 12,
   },
   emptySubtitle: {
-    fontSize: 14,
-    color: AppColors.textSecondary,
+    fontSize: 15,
+    color: '#6B7280',
     textAlign: 'center',
     marginBottom: 32,
+    lineHeight: 22,
   },
   suggestionsContainer: {
     flexDirection: 'row',
@@ -263,21 +391,26 @@ const styles = StyleSheet.create({
   },
   suggestionChip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: AppColors.surfaceCard,
+    paddingVertical: 10,
+    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: AppColors.accentCyan + '40',
+    borderColor: '#E5E7EB',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   suggestionText: {
-    fontSize: 12,
-    color: AppColors.textPrimary,
+    fontSize: 13,
+    color: '#374151',
   },
   inputContainer: {
     padding: 16,
-    backgroundColor: AppColors.surfaceCard + 'CC',
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: AppColors.textMuted + '1A',
+    borderTopColor: '#F3F4F6',
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -286,13 +419,15 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: AppColors.primaryMid,
+    backgroundColor: '#F9FAFB',
     borderRadius: 24,
     paddingHorizontal: 20,
     paddingVertical: 12,
     fontSize: 15,
-    color: AppColors.textPrimary,
+    color: '#111827',
     maxHeight: 100,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
   sendButton: {
     width: 48,
@@ -300,11 +435,11 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: AppColors.accentCyan,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    elevation: 2,
+    shadowColor: AppColors.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
   sendIcon: {
     fontSize: 20,
@@ -313,18 +448,16 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: AppColors.error + '33',
+    backgroundColor: '#FEF2F2',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FCA5A5',
   },
   stopIcon: {
     width: 48,
     height: 48,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  stopIconText: {
-    fontSize: 20,
-    color: AppColors.error,
   },
 });

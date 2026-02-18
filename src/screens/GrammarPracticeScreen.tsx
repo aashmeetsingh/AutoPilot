@@ -126,7 +126,7 @@ Format your response as JSON with keys: score, corrections, suggestions, overall
           setFeedback(newFeedback);
 
           // Award XP based on score
-          await userProgress.completeActivity('grammar', newFeedback.score, 45000);
+          await userProgress.updateXP(newFeedback.score);
         } else {
           throw new Error('Could not parse JSON');
         }
@@ -139,7 +139,7 @@ Format your response as JSON with keys: score, corrections, suggestions, overall
           overall: 'Your response is grammatically sound. Keep practicing!',
         };
         setFeedback(fallbackFeedback);
-        await userProgress.completeActivity('grammar', 75, 45000);
+        await userProgress.updateXP(75);
       }
     } catch (error) {
       console.error('Analysis error:', error);

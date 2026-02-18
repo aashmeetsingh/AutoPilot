@@ -5,3 +5,4 @@ export * from './AudioVisualizer';
 export * from './XPProgressBar';
 export * from './AchievementBadge';
 export * from './FeedbackModal';
+export * from './VoiceExerciseComponent';

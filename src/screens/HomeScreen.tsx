@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,180 +7,252 @@ import {
   StatusBar,
   TouchableOpacity,
   Platform,
+  ActivityIndicator,
+  Modal,
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../navigation/types';
 import { BottomNav } from '../components/BottomNav';
+import { LevelCard } from '../components/LevelCard';
+import { ExerciseCard } from '../components/ExerciseCard';
+import { AIRecommendationCard } from '../components/AIRecommendationCard';
+import { AILearningBuddyCard } from '../components/AILearningBuddyCard';
+import { ExerciseModal, DailyExerciseType } from '../components/ExerciseModal';
+import { useUserProgress } from '../services/UserProgressService';
+import { calculateXP } from '../lib/engines/xpEngine';
+import { AppColors } from '../theme';
+import { aiPracticeService, AIExercise } from '../services/AIPracticeService';
 
 type HomeScreenProps = {
   navigation: StackNavigationProp<RootStackParamList, 'Home'>;
 };
 
+const DAILY_EXERCISES = [
+  { type: 'typing' as DailyExerciseType, icon: '🔥', label: 'Typing', xp: 25 },
+  { type: 'tts' as DailyExerciseType, icon: '🗣️', label: 'Text-to-Speech', xp: 25 },
+  { type: 'stt' as DailyExerciseType, icon: '🎤', label: 'Speech-to-Text', xp: 25 },
+  { type: 'written' as DailyExerciseType, icon: '🔤', label: 'Written Practice', xp: 25 },
+];
+
+const FALLBACK_EXERCISES: Record<DailyExerciseType, AIExercise> = {
+  typing: {
+    question: 'Translate to Spanish: Hello',
+    answer: 'Hola',
+    type: 'typing',
+    hint: "It starts with 'H'",
+    difficulty: 1,
+    category: 'greetings',
+  },
+  tts: {
+    question: 'Say in Spanish: Good morning',
+    answer: 'Buenos días',
+    type: 'tts',
+    hint: 'A morning greeting',
+    difficulty: 1,
+    category: 'greetings',
+  },
+  stt: {
+    question: 'Listen and type what you hear',
+    answer: 'Gracias',
+    type: 'stt',
+    hint: 'A polite expression',
+    difficulty: 1,
+    category: 'greetings',
+  },
+  written: {
+    question: 'Write in Spanish: Thank you',
+    answer: 'Gracias',
+    type: 'written',
+    hint: 'A polite expression',
+    difficulty: 1,
+    category: 'greetings',
+  },
+};
+
 export const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
+  const userProgress = useUserProgress();
+  const [exerciseModalOpen, setExerciseModalOpen] = useState(false);
+  const [currentExerciseType, setCurrentExerciseType] = useState<DailyExerciseType>('typing');
+  const [currentExercise, setCurrentExercise] = useState<AIExercise>(FALLBACK_EXERCISES.typing);
+  const [loadingExercise, setLoadingExercise] = useState(false);
+  const [targetLanguage, setTargetLanguage] = useState('Spanish');
+
+  useEffect(() => {
+    userProgress.updateStreakStatus();
+    if (userProgress.targetLanguage) {
+      setTargetLanguage(userProgress.targetLanguage);
+    }
+  }, [userProgress.targetLanguage]);
+
+  const generateExercise = useCallback(async (type: DailyExerciseType) => {
+    setLoadingExercise(true);
+    try {
+      const exercise = await aiPracticeService.generateExercise(type, targetLanguage);
+      setCurrentExercise(exercise);
+    } catch (error) {
+      console.error('Failed to generate exercise:', error);
+      setCurrentExercise(FALLBACK_EXERCISES[type]);
+    } finally {
+      setLoadingExercise(false);
+    }
+  }, [targetLanguage]);
+
+  const handleExercisePress = async (type: DailyExerciseType) => {
+    setCurrentExerciseType(type);
+    await generateExercise(type);
+    setExerciseModalOpen(true);
+  };
+
+  const handleExerciseSubmit = async (answer: string, isCorrect: boolean, timeSpent: number) => {
+    if (isCorrect) {
+      const xpResult = calculateXP({
+        difficulty: currentExercise.difficulty || 1,
+        isCorrect: true,
+        timeSpentMs: timeSpent,
+        currentStreak: userProgress.streak,
+      });
+      await userProgress.updateXP(xpResult.totalXP);
+    }
+    setExerciseModalOpen(false);
+  };
+
+  const handleContinueLearning = () => {
+    navigation.navigate('Practice');
+  };
+
+  const handleAIBuddyPress = () => {
+    navigation.navigate('Chat');
+  };
+
+  const nextLevelXP = userProgress.getNextLevelXP();
+  const currentXPInLevel = userProgress.xp % 100;
+  const totalSkills = 5;
+  const unlockedSkills = Object.values(userProgress.skillTreeProgress).filter(
+    (status) => status === 'mastered' || status === 'in-progress'
+  ).length;
+
   return (
     <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
 
-      {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.blueDot} />
 
         <View style={styles.headerRight}>
           <View style={styles.statContainer}>
             <Text>⚡</Text>
-            <Text style={styles.statText}>1247</Text>
+            <Text style={styles.statText}>{userProgress.xp}</Text>
           </View>
 
           <View style={styles.statContainer}>
             <Text>🔥</Text>
-            <Text style={styles.statText}>7</Text>
+            <Text style={styles.statText}>{userProgress.streak}</Text>
           </View>
 
           <Text style={styles.bell}>🔔</Text>
         </View>
       </View>
 
-      {/* CONTENT */}
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Welcome */}
         <View style={styles.welcomeSection}>
           <Text style={styles.welcomeText}>Welcome back</Text>
-          <Text style={styles.userName}>Aashmeet Singh</Text>
-        </View>
-
-        {/* AI Recommendation */}
-        <View style={styles.recommendationCard}>
-          <View style={styles.row}>
-            <View style={styles.aiIcon}>
-              <Text style={{ fontSize: 20 }}>✨</Text>
-            </View>
-
-            <View style={{ flex: 1 }}>
-              <Text style={styles.recommendationTitle}>
-                AI Recommendation
-              </Text>
-              <Text style={styles.recommendationSubtitle}>
-                Practice Tenses to unlock Advanced level.
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Level Card */}
-        <View style={styles.levelSection}>
-          <Text style={styles.currentLevelLabel}>Current Level</Text>
-
-          <View style={styles.row}>
-            <Text style={styles.levelNumber}>Level 3</Text>
-            <View style={styles.intermediateBadge}>
-              <Text style={styles.intermediateBadgeText}>
-                Intermediate
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.rowBetween}>
-            <Text style={styles.progressText}>
-              Progress to Level 4
-            </Text>
-            <Text style={styles.xpText}>1247 / 2000 XP</Text>
-          </View>
-
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: '62%' }]} />
-          </View>
-
-          <View style={styles.rowBetween}>
-            <View style={styles.row}>
-              <View style={styles.checkCircle}>
-                <Text style={{ color: '#FFF', fontSize: 12 }}>✓</Text>
-              </View>
-              <Text style={styles.skillsText}>
-                3 of 5 skills unlocked
-              </Text>
-            </View>
-            <Text style={styles.percentageText}>60%</Text>
-          </View>
-        </View>
-
-        {/* Continue */}
-        <TouchableOpacity style={styles.continueButton}>
-          <Text style={styles.continueButtonText}>
-            Continue Learning
+          <Text style={styles.userName}>
+            {userProgress.name || 'Language Learner'}
           </Text>
+        </View>
+
+        <AIRecommendationCard
+          title="AI Recommendation"
+          subtitle={`Practice ${userProgress.targetLanguage || 'Spanish'} to unlock the next skill level.`}
+        />
+
+        <View style={{ marginTop: 20 }}>
+          <LevelCard
+            level={userProgress.level}
+            currentXP={currentXPInLevel}
+            maxXP={100}
+            skillsUnlocked={unlockedSkills}
+            totalSkills={totalSkills}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.continueButton}
+          onPress={handleContinueLearning}
+        >
+          <Text style={styles.continueButtonText}>Continue Learning</Text>
         </TouchableOpacity>
 
-        {/* Daily Exercises */}
         <View style={styles.dailyExercisesSection}>
-          <Text style={styles.dailyExercisesTitle}>
-            Daily Exercises
-          </Text>
+          <Text style={styles.dailyExercisesTitle}>Daily Exercises</Text>
 
           <View style={styles.exerciseRow}>
-            <ExerciseCard icon="🔥" label="Typing" />
-            <ExerciseCard icon="🗣️" label="Text-to-Speech" />
+            <ExerciseCard
+              icon={DAILY_EXERCISES[0].icon}
+              label={DAILY_EXERCISES[0].label}
+              xp={DAILY_EXERCISES[0].xp}
+              onPress={() => handleExercisePress(DAILY_EXERCISES[0].type)}
+            />
+            <ExerciseCard
+              icon={DAILY_EXERCISES[1].icon}
+              label={DAILY_EXERCISES[1].label}
+              xp={DAILY_EXERCISES[1].xp}
+              onPress={() => handleExercisePress(DAILY_EXERCISES[1].type)}
+            />
           </View>
 
           <View style={styles.exerciseRow}>
-            <ExerciseCard icon="🎤" label="Speech-to-Text" />
-            <ExerciseCard icon="🔤" label="Written Practice" />
+            <ExerciseCard
+              icon={DAILY_EXERCISES[2].icon}
+              label={DAILY_EXERCISES[2].label}
+              xp={DAILY_EXERCISES[2].xp}
+              onPress={() => handleExercisePress(DAILY_EXERCISES[2].type)}
+            />
+            <ExerciseCard
+              icon={DAILY_EXERCISES[3].icon}
+              label={DAILY_EXERCISES[3].label}
+              xp={DAILY_EXERCISES[3].xp}
+              onPress={() => handleExercisePress(DAILY_EXERCISES[3].type)}
+            />
           </View>
         </View>
 
-        {/* AI Buddy */}
         <View style={styles.aiLearningBuddySection}>
-          <View style={styles.aiLearningBuddyCard}>
-            <View style={styles.row}>
-              <View style={styles.aiAvatarContainer}>
-                <LinearGradient
-                  colors={['#10B981', '#3B82F6']}
-                  style={styles.aiAvatar}
-                />
-                <Text style={styles.botIcon}>🤖</Text>
-              </View>
-
-              <View style={{ flex: 1 }}>
-                <Text style={styles.aiLearningBuddyTitle}>
-                  AI Learning Buddy
-                </Text>
-                <Text style={styles.aiLearningBuddySubtitle}>
-                  "Let's practice airport conversations!"
-                </Text>
-              </View>
-            </View>
-          </View>
+          <AILearningBuddyCard
+            suggestion={`Let's practice ${(userProgress.targetLanguage || 'Spanish').toLowerCase()} together!`}
+            onPress={handleAIBuddyPress}
+          />
         </View>
 
         <View style={{ height: 20 }} />
       </ScrollView>
 
-      {/* BOTTOM NAV */}
+      <Modal
+        visible={loadingExercise}
+        transparent={true}
+        animationType="fade"
+      >
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color={AppColors.primary} />
+            <Text style={styles.loadingText}>Generating Exercise...</Text>
+          </View>
+        </View>
+      </Modal>
+
+      <ExerciseModal
+        isOpen={exerciseModalOpen}
+        onClose={() => setExerciseModalOpen(false)}
+        exerciseType={currentExerciseType}
+        exercise={currentExercise}
+        onSubmit={handleExerciseSubmit}
+        targetLanguage={targetLanguage}
+      />
+
       <BottomNav navigation={navigation} active="Home" />
     </View>
   );
 };
-
-/* ---------- Small Components ---------- */
-
-const ExerciseCard = ({
-  icon,
-  label,
-}: {
-  icon: string;
-  label: string;
-}) => (
-  <View style={styles.exerciseCard}>
-    <Text style={{ fontSize: 32 }}>{icon}</Text>
-    <Text style={styles.exerciseLabel}>{label}</Text>
-    <View style={styles.xpBadge}>
-      <Text style={{ fontSize: 10 }}>⚡</Text>
-      <Text style={styles.xpValue}>+25</Text>
-    </View>
-  </View>
-);
-
-/* ---------- Styles ---------- */
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F7FA' },
@@ -197,7 +269,7 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#2F5FED',
+    backgroundColor: AppColors.primary,
   },
 
   headerRight: {
@@ -215,92 +287,13 @@ const styles = StyleSheet.create({
   bell: { fontSize: 18 },
 
   welcomeSection: { padding: 20 },
-  welcomeText: { color: '#6B7280' },
-  userName: { fontSize: 28, fontWeight: '700' },
-
-  recommendationCard: {
-    backgroundColor: '#E8EDFA',
-    marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 16,
-  },
-
-  aiIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-
-  recommendationTitle: { fontWeight: '600' },
-  recommendationSubtitle: { color: '#4B5563', fontSize: 13 },
-
-  levelSection: {
-    backgroundColor: '#FFF',
-    margin: 20,
-    borderRadius: 16,
-    padding: 20,
-    elevation: 2,
-  },
-
-  currentLevelLabel: { color: '#6B7280', fontSize: 13 },
-  levelNumber: { fontSize: 32, fontWeight: '700', marginRight: 12 },
-
-  intermediateBadge: {
-    backgroundColor: '#E0EAFF',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-
-  intermediateBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#2F5FED',
-  },
-
-  row: { flexDirection: 'row', alignItems: 'center' },
-  rowBetween: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-
-  progressText: { fontSize: 13, color: '#6B7280' },
-  xpText: { fontWeight: '600' },
-
-  progressBar: {
-    height: 8,
-    backgroundColor: '#E5E7EB',
-    borderRadius: 4,
-    marginVertical: 12,
-  },
-
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#2F5FED',
-    borderRadius: 4,
-  },
-
-  checkCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: '#10B981',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 8,
-  },
-
-  skillsText: { fontSize: 13 },
-  percentageText: { fontWeight: '600', color: '#10B981' },
+  welcomeText: { color: AppColors.textSecondary },
+  userName: { fontSize: 28, fontWeight: '700', color: AppColors.primary },
 
   continueButton: {
-    backgroundColor: '#2F5FED',
+    backgroundColor: AppColors.primary,
     marginHorizontal: 20,
+    marginTop: 20,
     padding: 16,
     borderRadius: 28,
     alignItems: 'center',
@@ -313,66 +306,39 @@ const styles = StyleSheet.create({
   },
 
   dailyExercisesSection: { padding: 20 },
-  dailyExercisesTitle: { fontSize: 20, fontWeight: '700' },
+  dailyExercisesTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: AppColors.primaryDark,
+    marginBottom: 12,
+  },
 
   exerciseRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 12,
+    gap: 12,
   },
 
-  exerciseCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 20,
-    width: '48%',
-    alignItems: 'center',
-    elevation: 2,
-  },
+  aiLearningBuddySection: { paddingHorizontal: 20 },
 
-  exerciseLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    marginVertical: 8,
-  },
-
-  xpBadge: {
-    flexDirection: 'row',
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-
-  xpValue: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#92400E',
-    marginLeft: 4,
-  },
-
-  aiLearningBuddySection: { padding: 20 },
-
-  aiLearningBuddyCard: {
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-    padding: 16,
-    elevation: 2,
-  },
-
-  aiAvatarContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    overflow: 'hidden',
-    marginRight: 12,
+  loadingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-
-  aiAvatar: { ...StyleSheet.absoluteFillObject },
-  botIcon: { position: 'absolute', fontSize: 20 },
-
-  aiLearningBuddyTitle: { fontWeight: '600' },
-  aiLearningBuddySubtitle: { fontSize: 13, color: '#6B7280' },
+  loadingBox: {
+    padding: 24,
+    backgroundColor: 'white',
+    borderRadius: 16,
+    alignItems: 'center',
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    fontWeight: '600',
+    color: AppColors.primary,
+  },
 });

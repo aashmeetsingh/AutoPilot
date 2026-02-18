@@ -88,31 +88,41 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   userBubble: {
-    backgroundColor: AppColors.accentCyan,
+    backgroundColor: AppColors.primary,
     borderBottomRightRadius: 4,
+    elevation: 1,
+    shadowColor: AppColors.primary,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
   },
   assistantBubble: {
-    backgroundColor: AppColors.surfaceCard,
+    backgroundColor: '#FFFFFF',
     borderBottomLeftRadius: 4,
     borderWidth: 1,
-    borderColor: AppColors.textMuted + '20',
+    borderColor: '#E5E7EB',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
   },
   errorBubble: {
-    backgroundColor: AppColors.error + '20',
-    borderColor: AppColors.error + '40',
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FAC7C7',
   },
   text: {
     fontSize: 15,
-    lineHeight: 21,
+    lineHeight: 22,
   },
   userText: {
     color: '#FFFFFF',
   },
   assistantText: {
-    color: AppColors.textPrimary,
+    color: '#1F2937',
   },
   errorText: {
-    color: AppColors.error,
+    color: '#DC2626',
   },
   metricsContainer: {
     flexDirection: 'row',
@@ -121,16 +131,16 @@ const styles = StyleSheet.create({
   },
   metrics: {
     fontSize: 11,
-    color: AppColors.textMuted,
+    color: '#6B7280',
   },
   cancelledText: {
     fontSize: 11,
-    color: AppColors.warning,
+    color: '#D97706',
     marginTop: 4,
   },
   streamingIndicator: {
     fontSize: 16,
-    color: AppColors.accentCyan,
+    color: AppColors.primary,
     marginTop: 2,
   },
 });

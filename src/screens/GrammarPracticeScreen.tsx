@@ -172,13 +172,13 @@ Format your response as JSON with keys: score, corrections, suggestions, overall
   if (!modelService.isLLMLoaded) {
     return (
       <ModelLoaderWidget
-        title="LLM Model Required"
-        subtitle="Download and load the language model for grammar analysis"
+        title="AI Tutor Core Required"
+        subtitle="Download the AI learning brain for grammar analysis"
         icon="chat"
         accentColor={AppColors.accentGreen}
         isDownloading={modelService.isLLMDownloading}
         isLoading={modelService.isLLMLoading}
-        progress={modelService.llmDownloadProgress}
+        modelId="llm"
         onLoad={modelService.downloadAndLoadLLM}
       />
     );

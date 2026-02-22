@@ -233,8 +233,8 @@ export const ConversationPracticeScreen: React.FC<ConversationPracticeScreenProp
           <Text style={styles.headerTitle}>Conversation Practice</Text>
         </View>
         <ModelLoaderWidget
-          title="Voice Agent Required"
-          subtitle="Download and load all models (LLM, STT, TTS)"
+          title="Voice Tutor Required"
+          subtitle="Download and load the AI modules (Tutor, Listening, Speaking)"
           icon="pipeline"
           accentColor={AppColors.accentCyan}
           isDownloading={
@@ -247,12 +247,7 @@ export const ConversationPracticeScreen: React.FC<ConversationPracticeScreenProp
             modelService.isSTTLoading ||
             modelService.isTTSLoading
           }
-          progress={
-            (modelService.llmDownloadProgress +
-              modelService.sttDownloadProgress +
-              modelService.ttsDownloadProgress) /
-            3
-          }
+          modelId="llm"
           onLoad={modelService.downloadAndLoadAllModels}
         />
       </View>
@@ -405,32 +400,33 @@ export const ConversationPracticeScreen: React.FC<ConversationPracticeScreenProp
           </TouchableOpacity>
         ))}
 
-        {selectedScenario && !isActive && (
-          <View style={styles.selectedModal}>
-            <View style={styles.selectedScenarioCard}>
-              <View style={styles.selectedHeader}>
-                <Text style={styles.selectedTitle}>Selected: {selectedScenario.title}</Text>
-                <TouchableOpacity onPress={() => setSelectedScenario(null)}>
-                  <Text style={styles.clearButton}>✕</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.selectedDescription}>{selectedScenario.prompt}</Text>
+      </ScrollView>
 
-              <TouchableOpacity onPress={startConversation} style={{ marginTop: 20 }}>
-                <LinearGradient
-                  colors={[AppColors.accentCyan, '#06B6D4']}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                  style={styles.button}
-                >
-                  <Text style={styles.buttonIcon}>🎤</Text>
-                  <Text style={styles.buttonText}>Start Conversation</Text>
-                </LinearGradient>
+      {selectedScenario && !isActive && (
+        <View style={styles.selectedModal}>
+          <View style={styles.selectedScenarioCard}>
+            <View style={styles.selectedHeader}>
+              <Text style={styles.selectedTitle}>Selected: {selectedScenario.title}</Text>
+              <TouchableOpacity onPress={() => setSelectedScenario(null)}>
+                <Text style={styles.clearButton}>✕</Text>
               </TouchableOpacity>
             </View>
+            <Text style={styles.selectedDescription}>{selectedScenario.prompt}</Text>
+
+            <TouchableOpacity onPress={startConversation} style={{ marginTop: 20 }}>
+              <LinearGradient
+                colors={[AppColors.accentCyan, '#06B6D4']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.button}
+              >
+                <Text style={styles.buttonIcon}>🎤</Text>
+                <Text style={styles.buttonText}>Start Conversation</Text>
+              </LinearGradient>
+            </TouchableOpacity>
           </View>
-        )}
-      </ScrollView>
+        </View>
+      )}
     </View>
   );
 };

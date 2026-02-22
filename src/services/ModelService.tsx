@@ -6,10 +6,34 @@ import { ONNX, ModelArtifactType } from '@runanywhere/onnx';
 // Model IDs - matching sample app model registry
 // See: /Users/shubhammalhotra/Desktop/test-fresh/runanywhere-sdks/examples/react-native/RunAnywhereAI/App.tsx
 const MODEL_IDS = {
-  llm: 'smollm2-360m-q8_0', // Faster model (360M params)
-  stt: 'sherpa-onnx-whisper-tiny.en',
-  tts: 'vits-piper-en_US-lessac-medium',
+  llm: 'qwen3-0.6b-gguf', // Primary multilingual model with excellent reasoning
+  stt: 'sherpa-onnx-whisper-tiny', // Multilingual STT
 } as const;
+
+export const TTS_VOICES = {
+  en: {
+    id: 'vits-piper-en_US-lessac-medium',
+    name: 'English (US)',
+    url: 'https://github.com/RunanywhereAI/sherpa-onnx/releases/download/runanywhere-models-v1/vits-piper-en_US-lessac-medium.tar.gz',
+  },
+  es: {
+    id: 'vits-piper-es_ES-carlfm-medium',
+    name: 'Spanish',
+    url: 'https://github.com/RunanywhereAI/sherpa-onnx/releases/download/runanywhere-models-v1/vits-piper-es_ES-carlfm-medium.tar.gz',
+  },
+  fr: {
+    id: 'vits-piper-fr_FR-siwis-medium',
+    name: 'French',
+    url: 'https://github.com/RunanywhereAI/sherpa-onnx/releases/download/runanywhere-models-v1/vits-piper-fr_FR-siwis-medium.tar.gz',
+  },
+  de: {
+    id: 'vits-piper-de_DE-thorsten-medium',
+    name: 'German',
+    url: 'https://github.com/RunanywhereAI/sherpa-onnx/releases/download/runanywhere-models-v1/vits-piper-de_DE-thorsten-medium.tar.gz',
+  },
+};
+
+export type SupportedLanguage = keyof typeof TTS_VOICES;
 
 interface ModelServiceState {
   // Download state
@@ -17,9 +41,8 @@ interface ModelServiceState {
   isSTTDownloading: boolean;
   isTTSDownloading: boolean;
 
-  llmDownloadProgress: number;
-  sttDownloadProgress: number;
-  ttsDownloadProgress: number;
+  // Error state
+  modelError: string | null;
 
   // Load state
   isLLMLoading: boolean;
@@ -32,14 +55,40 @@ interface ModelServiceState {
   isTTSLoaded: boolean;
 
   isVoiceAgentReady: boolean;
-
-  // Actions
+  activeLanguage: SupportedLanguage;
+  setActiveLanguage: (lang: SupportedLanguage) => Promise<void>;
   downloadAndLoadLLM: () => Promise<void>;
   downloadAndLoadSTT: () => Promise<void>;
   downloadAndLoadTTS: () => Promise<void>;
   downloadAndLoadAllModels: () => Promise<void>;
   unloadAllModels: () => Promise<void>;
 }
+
+// Global Event Emitter for progress to prevent whole-tree Context re-renders
+export const ProgressEmitter = {
+  listeners: new Map<string, Array<(progress: number) => void>>(),
+
+  emit(modelId: string, progress: number) {
+    const callbacks = this.listeners.get(modelId);
+    if (callbacks) {
+      callbacks.forEach(cb => cb(progress));
+    }
+  },
+
+  subscribe(modelId: string, callback: (progress: number) => void) {
+    if (!this.listeners.has(modelId)) {
+      this.listeners.set(modelId, []);
+    }
+    this.listeners.get(modelId)!.push(callback);
+
+    return () => {
+      const callbacks = this.listeners.get(modelId);
+      if (callbacks) {
+        this.listeners.set(modelId, callbacks.filter(cb => cb !== callback));
+      }
+    };
+  }
+};
 
 const ModelServiceContext = createContext<ModelServiceState | null>(null);
 
@@ -61,9 +110,8 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
   const [isSTTDownloading, setIsSTTDownloading] = useState(false);
   const [isTTSDownloading, setIsTTSDownloading] = useState(false);
 
-  const [llmDownloadProgress, setLLMDownloadProgress] = useState(0);
-  const [sttDownloadProgress, setSTTDownloadProgress] = useState(0);
-  const [ttsDownloadProgress, setTTSDownloadProgress] = useState(0);
+  // Error state
+  const [modelError, setModelError] = useState<string | null>(null);
 
   // Load state
   const [isLLMLoading, setIsLLMLoading] = useState(false);
@@ -74,6 +122,9 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
   const [isLLMLoaded, setIsLLMLoaded] = useState(false);
   const [isSTTLoaded, setIsSTTLoaded] = useState(false);
   const [isTTSLoaded, setIsTTSLoaded] = useState(false);
+
+  // Active language
+  const [activeLanguage, setActiveLanguageState] = useState<SupportedLanguage>('en');
 
   const isVoiceAgentReady = isLLMLoaded && isSTTLoaded && isTTSLoaded;
 
@@ -87,6 +138,23 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
     }
   }, []);
 
+  // Update language and unload current TTS if necessary
+  const setActiveLanguage = useCallback(async (lang: SupportedLanguage) => {
+    if (activeLanguage === lang) return;
+
+    // Changing language means we need to unload current TTS voice and require loading the new one
+    try {
+      if (isTTSLoaded) {
+        await RunAnywhere.unloadTTSModel();
+        setIsTTSLoaded(false);
+      }
+    } catch (err) {
+      console.warn('Failed to unload previous TTS:', err);
+    }
+
+    setActiveLanguageState(lang);
+  }, [activeLanguage, isTTSLoaded]);
+
   // Download and load LLM
   const downloadAndLoadLLM = useCallback(async () => {
     if (isLLMDownloading || isLLMLoading) return;
@@ -96,11 +164,10 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
 
       if (!isDownloaded) {
         setIsLLMDownloading(true);
-        setLLMDownloadProgress(0);
 
-        // Download with progress (per docs: progress.progress is 0-1)
+        // Download with progress - emit to subscribers instead of updating Context state
         await RunAnywhere.downloadModel(MODEL_IDS.llm, (progress) => {
-          setLLMDownloadProgress(progress.progress * 100);
+          ProgressEmitter.emit('llm', progress.progress * 100);
         });
 
         setIsLLMDownloading(false);
@@ -116,6 +183,7 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
       setIsLLMLoading(false);
     } catch (error) {
       console.error('LLM download/load error:', error);
+      setModelError(`LLM Error: ${error}`);
       setIsLLMDownloading(false);
       setIsLLMLoading(false);
     }
@@ -130,10 +198,9 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
 
       if (!isDownloaded) {
         setIsSTTDownloading(true);
-        setSTTDownloadProgress(0);
 
         await RunAnywhere.downloadModel(MODEL_IDS.stt, (progress) => {
-          setSTTDownloadProgress(progress.progress * 100);
+          ProgressEmitter.emit('stt', progress.progress * 100);
         });
 
         setIsSTTDownloading(false);
@@ -149,6 +216,7 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
       setIsSTTLoading(false);
     } catch (error) {
       console.error('STT download/load error:', error);
+      setModelError(`STT Error: ${error}`);
       setIsSTTDownloading(false);
       setIsSTTLoading(false);
     }
@@ -159,14 +227,14 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
     if (isTTSDownloading || isTTSLoading) return;
 
     try {
-      const isDownloaded = await checkModelDownloaded(MODEL_IDS.tts);
+      const currentVoice = TTS_VOICES[activeLanguage];
+      const isDownloaded = await checkModelDownloaded(currentVoice.id);
 
       if (!isDownloaded) {
         setIsTTSDownloading(true);
-        setTTSDownloadProgress(0);
 
-        await RunAnywhere.downloadModel(MODEL_IDS.tts, (progress) => {
-          setTTSDownloadProgress(progress.progress * 100);
+        await RunAnywhere.downloadModel(currentVoice.id, (progress) => {
+          ProgressEmitter.emit('tts', progress.progress * 100);
         });
 
         setIsTTSDownloading(false);
@@ -174,7 +242,7 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
 
       // Load the TTS model (per docs: loadTTSModel(localPath, 'piper'))
       setIsTTSLoading(true);
-      const modelInfo = await RunAnywhere.getModelInfo(MODEL_IDS.tts);
+      const modelInfo = await RunAnywhere.getModelInfo(currentVoice.id);
       if (modelInfo?.localPath) {
         await RunAnywhere.loadTTSModel(modelInfo.localPath, 'piper');
         setIsTTSLoaded(true);
@@ -182,18 +250,31 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
       setIsTTSLoading(false);
     } catch (error) {
       console.error('TTS download/load error:', error);
+      setModelError(`TTS Error: ${error}`);
       setIsTTSDownloading(false);
       setIsTTSLoading(false);
     }
-  }, [isTTSDownloading, isTTSLoading, checkModelDownloaded]);
+  }, [isTTSDownloading, isTTSLoading, activeLanguage, checkModelDownloaded]);
 
-  // Download and load all models
+  // Download and load all models (Sequentially to prevent OOM)
   const downloadAndLoadAllModels = useCallback(async () => {
-    await Promise.all([
-      downloadAndLoadLLM(),
-      downloadAndLoadSTT(),
-      downloadAndLoadTTS(),
-    ]);
+    try {
+      // 1. STT (Smallest, 80MB)
+      console.log('Starting STT model pipeline...');
+      await downloadAndLoadSTT();
+
+      // 2. TTS (Medium, 100MB)
+      console.log('Starting TTS model pipeline...');
+      await downloadAndLoadTTS();
+
+      // 3. LLM (Largest, ~400MB) - Load last to prioritize basic voice IO working safely
+      console.log('Starting LLM model pipeline...');
+      await downloadAndLoadLLM();
+
+      console.log('All model pipelines completed sequentially.');
+    } catch (err) {
+      console.error('Failed during sequential model pipeline:', err);
+    }
   }, [downloadAndLoadLLM, downloadAndLoadSTT, downloadAndLoadTTS]);
 
   // Unload all models
@@ -214,9 +295,7 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
     isLLMDownloading,
     isSTTDownloading,
     isTTSDownloading,
-    llmDownloadProgress,
-    sttDownloadProgress,
-    ttsDownloadProgress,
+    modelError,
     isLLMLoading,
     isSTTLoading,
     isTTSLoading,
@@ -224,6 +303,8 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
     isSTTLoaded,
     isTTSLoaded,
     isVoiceAgentReady,
+    activeLanguage,
+    setActiveLanguage,
     downloadAndLoadLLM,
     downloadAndLoadSTT,
     downloadAndLoadTTS,
@@ -243,20 +324,20 @@ export const ModelServiceProvider: React.FC<ModelServiceProviderProps> = ({ chil
  * Models match the sample app: /Users/shubhammalhotra/Desktop/test-fresh/runanywhere-sdks/examples/react-native/RunAnywhereAI/App.tsx
  */
 export const registerDefaultModels = async () => {
-  // SmolLM2-360M-GGUF (Primary - Faster)
+  // Qwen2.5-0.5B-Instruct-GGUF (Q4_K_M) - Faster & Multilingual & Lightweight
   await LlamaCPP.addModel({
-    id: MODEL_IDS.llm, // 'smollm2-360m-q8_0'
+    id: MODEL_IDS.llm,
+    name: 'Qwen2.5 0.5B Q4_K_M',
+    url: 'https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf',
+    memoryRequirement: 450_000_000, // Reduced from 700MB to 450MB
+  });
+
+  // SmolLM2-360M-GGUF (Secondary - Fallback)
+  await LlamaCPP.addModel({
+    id: 'smollm2-360m-q8_0',
     name: 'SmolLM2 360M Q8_0',
     url: 'https://huggingface.co/prithivMLmods/SmolLM2-360M-GGUF/resolve/main/SmolLM2-360M.Q8_0.gguf',
     memoryRequirement: 500_000_000,
-  });
-
-  // Qwen3-0.6B-GGUF (Secondary)
-  await LlamaCPP.addModel({
-    id: 'qwen3-0.6B-gguf',
-    name: 'Qwen3-0.6B-GGUF',
-    url: 'https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q8_0.gguf',
-    memoryRequirement: 700_000_000,
   });
 
   // Optionally keep other models for fallback
@@ -267,8 +348,7 @@ export const registerDefaultModels = async () => {
     memoryRequirement: 400_000_000,
   });
 
-
-  // STT Model - Sherpa Whisper Tiny English
+  // STT Model - Sherpa Whisper Tiny English (Multilingual unavailable in v1)
   await ONNX.addModel({
     id: MODEL_IDS.stt,
     name: 'Sherpa Whisper Tiny (ONNX)',
@@ -279,12 +359,16 @@ export const registerDefaultModels = async () => {
   });
 
   // TTS Model - Piper TTS (US English - Medium quality)
-  await ONNX.addModel({
-    id: MODEL_IDS.tts,
-    name: 'Piper TTS (US English - Medium)',
-    url: 'https://github.com/RunanywhereAI/sherpa-onnx/releases/download/runanywhere-models-v1/vits-piper-en_US-lessac-medium.tar.gz',
-    modality: ModelCategory.SpeechSynthesis,
-    artifactType: ModelArtifactType.TarGzArchive,
-    memoryRequirement: 65_000_000,
-  });
+  // Additional Piper voices dynamically added
+  for (const langKey of Object.keys(TTS_VOICES)) {
+    const voice = TTS_VOICES[langKey as SupportedLanguage];
+    await ONNX.addModel({
+      id: voice.id,
+      name: `Piper TTS (${voice.name})`,
+      url: voice.url,
+      modality: ModelCategory.SpeechSynthesis,
+      artifactType: ModelArtifactType.TarGzArchive,
+      memoryRequirement: 65_000_000,
+    });
+  }
 };

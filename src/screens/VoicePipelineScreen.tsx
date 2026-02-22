@@ -35,11 +35,7 @@ interface ConversationMessage {
 }
 
 // Model IDs - must match those registered in ModelService
-const MODEL_IDS = {
-  llm: 'lfm2-350m-q8_0',
-  stt: 'sherpa-onnx-whisper-tiny.en',
-  tts: 'vits-piper-en_US-lessac-medium',
-};
+
 
 export const VoicePipelineScreen: React.FC = () => {
   const modelService = useModelService();
@@ -47,7 +43,7 @@ export const VoicePipelineScreen: React.FC = () => {
   const [status, setStatus] = useState<string>('Ready');
   const [conversation, setConversation] = useState<ConversationMessage[]>([]);
   const [audioLevel, setAudioLevel] = useState(0);
-  
+
   // Refs for session and audio
   const sessionRef = useRef<VoiceSessionHandle | null>(null);
   const currentSoundRef = useRef<any>(null);
@@ -57,35 +53,30 @@ export const VoicePipelineScreen: React.FC = () => {
   // https://docs.runanywhere.ai/react-native/voice-agent#voicesessionevent
   const handleVoiceEvent = useCallback((event: VoiceSessionEvent) => {
     switch (event.type) {
-      case 'sessionStarted':
+      case 'started':
         setStatus('Listening...');
         setAudioLevel(0.2);
         break;
-        
-      case 'listeningStarted':
+
+      case 'listening':
         setStatus('Listening...');
         setAudioLevel(0.3);
         break;
-        
-      case 'speechDetected':
+
+      case 'speechStarted':
         setStatus('Hearing you...');
         setAudioLevel(0.7);
         break;
-        
+
       case 'speechEnded':
         setAudioLevel(0.1);
         break;
-        
-      case 'transcribing':
-        setStatus('Processing speech...');
-        setAudioLevel(0.4);
-        break;
-        
-      case 'transcriptionComplete':
-        if (event.data?.transcript) {
+
+      case 'transcribed':
+        if (event.transcription) {
           const userMessage: ConversationMessage = {
             role: 'user',
-            text: event.data.transcript,
+            text: event.transcription,
             timestamp: new Date(),
           };
           setConversation(prev => [...prev, userMessage]);
@@ -93,17 +84,12 @@ export const VoicePipelineScreen: React.FC = () => {
         setStatus('Thinking...');
         setAudioLevel(0.5);
         break;
-        
-      case 'generating':
-        setStatus('Generating response...');
-        setAudioLevel(0.5);
-        break;
-        
-      case 'generationComplete':
-        if (event.data?.response) {
+
+      case 'responded':
+        if (event.response) {
           const assistantMessage: ConversationMessage = {
             role: 'assistant',
-            text: event.data.response,
+            text: event.response,
             timestamp: new Date(),
           };
           setConversation(prev => [...prev, assistantMessage]);
@@ -111,33 +97,21 @@ export const VoicePipelineScreen: React.FC = () => {
         setStatus('Synthesizing...');
         setAudioLevel(0.6);
         break;
-        
-      case 'synthesizing':
-        setStatus('Preparing voice...');
-        break;
-        
-      case 'synthesisComplete':
-        setStatus('Speaking...');
-        // Play audio if provided
-        if (event.data?.audio) {
-          playResponseAudio(event.data.audio);
-        }
-        break;
-        
+
       case 'speaking':
         setStatus('Speaking...');
         setAudioLevel(0.8);
         break;
-        
-      case 'turnComplete':
+
+      case 'turnCompleted':
         setStatus('Listening...');
         setAudioLevel(0.3);
         break;
-        
+
       case 'error':
-        setStatus(`Error: ${event.data?.error || 'Unknown error'}`);
+        setStatus(`Error: ${event.error || 'Unknown error'}`);
         setAudioLevel(0);
-        console.error('Voice session error:', event.data?.error);
+        console.error('Voice session error:', event.error);
         break;
     }
   }, []);
@@ -163,10 +137,10 @@ export const VoicePipelineScreen: React.FC = () => {
             console.error('Failed to load sound:', error);
             return;
           }
-          
+
           currentSoundRef.current = sound;
           setAudioLevel(0.8);
-          
+
           sound.play((success: boolean) => {
             sound.release();
             currentSoundRef.current = null;
@@ -240,24 +214,16 @@ export const VoicePipelineScreen: React.FC = () => {
 
     try {
       // Per docs: Use startVoiceSession with VoiceSessionConfig and callback
-      sessionRef.current = await RunAnywhere.startVoiceSession(
-        {
-          agentConfig: {
-            llmModelId: MODEL_IDS.llm,
-            sttModelId: MODEL_IDS.stt,
-            ttsModelId: MODEL_IDS.tts,
-            systemPrompt: 'You are a helpful, friendly voice assistant. Keep your responses brief and conversational.',
-            generationOptions: {
-              maxTokens: 150,
-              temperature: 0.7,
-            },
-          },
-          enableVAD: true,
-          vadSensitivity: 0.5,
-          speechTimeout: 3000, // 3 seconds timeout for speech
-        },
-        handleVoiceEvent
-      );
+      const config: any = {
+        systemPrompt: 'You are a helpful, friendly voice assistant. Keep your responses brief and conversational.',
+        maxTokens: 100, // Reduced for very fast text-to-speech handoffs
+        temperature: 0.6,
+        enableVAD: true,
+        vadSensitivity: 0.5,
+        speechTimeout: 3000, // 3 seconds timeout for speech
+        onEvent: handleVoiceEvent,
+      };
+      sessionRef.current = await RunAnywhere.startVoiceSession(config);
     } catch (error) {
       console.error('Voice agent error:', error);
       setStatus(`Error: ${error}`);
@@ -277,13 +243,13 @@ export const VoicePipelineScreen: React.FC = () => {
           currentSoundRef.current = null;
         });
       }
-      
+
       // Stop the voice session
       if (sessionRef.current) {
         await sessionRef.current.stop();
         sessionRef.current = null;
       }
-      
+
       setIsActive(false);
       setStatus('Ready');
       setAudioLevel(0);
@@ -299,8 +265,8 @@ export const VoicePipelineScreen: React.FC = () => {
   if (!modelService.isVoiceAgentReady) {
     return (
       <ModelLoaderWidget
-        title="Voice Agent Setup Required"
-        subtitle="Download and load all models (LLM, STT, TTS) to use the voice agent"
+        title="Voice Tutor Modules Required"
+        subtitle="Download all AI modules (Tutor, Listening, Speaking) to use the voice agent"
         icon="pipeline"
         accentColor={AppColors.accentGreen}
         isDownloading={
@@ -313,12 +279,7 @@ export const VoicePipelineScreen: React.FC = () => {
           modelService.isSTTLoading ||
           modelService.isTTSLoading
         }
-        progress={
-          (modelService.llmDownloadProgress +
-            modelService.sttDownloadProgress +
-            modelService.ttsDownloadProgress) /
-          3
-        }
+        modelId="llm" // Voice pipeline model loader widget watches the final LLM stage
         onLoad={modelService.downloadAndLoadAllModels}
       />
     );
@@ -394,19 +355,19 @@ export const VoicePipelineScreen: React.FC = () => {
             <Text style={styles.infoTitle}>How it works:</Text>
             <View style={styles.infoStep}>
               <Text style={styles.stepNumber}>1️⃣</Text>
-              <Text style={styles.stepText}>Voice Activity Detection (VAD) listens for speech</Text>
+              <Text style={styles.stepText}>System listens for speech detection</Text>
             </View>
             <View style={styles.infoStep}>
               <Text style={styles.stepNumber}>2️⃣</Text>
-              <Text style={styles.stepText}>Speech is transcribed (STT with Whisper)</Text>
+              <Text style={styles.stepText}>Speech is transcribed into text</Text>
             </View>
             <View style={styles.infoStep}>
               <Text style={styles.stepNumber}>3️⃣</Text>
-              <Text style={styles.stepText}>AI generates response (LLM with SmolLM2)</Text>
+              <Text style={styles.stepText}>AI comprehends and formulates response</Text>
             </View>
             <View style={styles.infoStep}>
               <Text style={styles.stepNumber}>4️⃣</Text>
-              <Text style={styles.stepText}>Response is spoken (TTS with Piper)</Text>
+              <Text style={styles.stepText}>AI responds with realistic learning voice</Text>
             </View>
           </View>
         )}

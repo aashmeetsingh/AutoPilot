@@ -33,7 +33,7 @@ const NavItem: React.FC<NavItemProps> = ({
 
   const handlePress = () => {
     if (!isActive) {
-      navigation.navigate(label);
+      navigation.navigate(label as any);
     }
   };
 

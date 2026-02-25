@@ -38,7 +38,7 @@ export const SpeechToTextScreen: React.FC = () => {
         clearInterval(audioLevelIntervalRef.current);
       }
       if (isRecording && NativeAudioModule) {
-        NativeAudioModule.cancelRecording().catch(() => {});
+        NativeAudioModule.cancelRecording().catch(() => { });
       }
     };
   }, [isRecording]);
@@ -72,7 +72,7 @@ export const SpeechToTextScreen: React.FC = () => {
 
       console.warn('[STT] Starting native recording...');
       const result = await NativeAudioModule.startRecording();
-      
+
       recordingPathRef.current = result.path;
       recordingStartRef.current = Date.now();
       setIsRecording(true);
@@ -175,13 +175,13 @@ export const SpeechToTextScreen: React.FC = () => {
   if (!modelService.isSTTLoaded) {
     return (
       <ModelLoaderWidget
-        title="STT Model Required"
-        subtitle="Download and load the speech recognition model"
+        title="Listening Engine Required"
+        subtitle="Download the speech recognition system to continue"
         icon="mic"
         accentColor={AppColors.accentViolet}
         isDownloading={modelService.isSTTDownloading}
         isLoading={modelService.isSTTLoading}
-        progress={modelService.sttDownloadProgress}
+        modelId="stt"
         onLoad={modelService.downloadAndLoadSTT}
       />
     );

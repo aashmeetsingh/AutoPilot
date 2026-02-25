@@ -94,20 +94,20 @@ const DAILY_GOALS = [
   { minutes: 30, label: '30 min', description: 'Intense', icon: '🔥', xp: 150 },
 ];
 
-export const SetupScreen = ({ onComplete }) => {
+export const SetupScreen = ({ onComplete }: { onComplete: (data: any) => void }) => {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
-  const [nativeLanguage, setNativeLanguage] = useState(null);
-  const [targetLanguage, setTargetLanguage] = useState(null);
-  const [proficiency, setProficiency] = useState(null);
-  const [selectedGoals, setSelectedGoals] = useState([]);
-  const [dailyGoal, setDailyGoal] = useState(null);
+  const [nativeLanguage, setNativeLanguage] = useState<string | null>(null);
+  const [targetLanguage, setTargetLanguage] = useState<string | null>(null);
+  const [proficiency, setProficiency] = useState<string | null>(null);
+  const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
+  const [dailyGoal, setDailyGoal] = useState<number | null>(null);
 
   const slideAnim = useRef(new Animated.Value(0)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
 
-  const animateTransition = (callback) => {
+  const animateTransition = (callback: () => void) => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 0,
@@ -146,8 +146,8 @@ export const SetupScreen = ({ onComplete }) => {
     animateTransition(() => setStep((s) => s - 1));
   };
 
-  const toggleGoal = (id) => {
-    setSelectedGoals((prev) =>
+  const toggleGoal = (id: string) => {
+    setSelectedGoals((prev: string[]) =>
       prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]
     );
   };
@@ -489,7 +489,7 @@ export const SetupScreen = ({ onComplete }) => {
             </Text>
             <View style={styles.doneSummaryCard}>
               <SummaryRow icon="🗺️" label="Learning" value={`${selectedTarget?.flag} ${selectedTarget?.label}`} />
-              <SummaryRow icon="📊" label="Level" value={proficiency?.charAt(0).toUpperCase() + proficiency?.slice(1)} />
+              <SummaryRow icon="📊" label="Level" value={proficiency ? proficiency.charAt(0).toUpperCase() + proficiency.slice(1) : ''} />
               <SummaryRow icon="🎯" label="Goals" value={selectedGoals.length > 0 ? `${selectedGoals.length} selected` : '—'} />
               <SummaryRow icon="⏱️" label="Daily goal" value={`${dailyGoal} min / day`} last />
             </View>
@@ -583,7 +583,7 @@ export const SetupScreen = ({ onComplete }) => {
 };
 
 // ─── Summary Row ─────────────────────────────────────────────────────────────
-const SummaryRow = ({ icon, label, value, last }) => (
+const SummaryRow = ({ icon, label, value, last }: { icon: string, label: string, value: string, last?: boolean }) => (
   <View style={[styles.summaryRow, !last && styles.summaryRowBorder]}>
     <Text style={styles.summaryIcon}>{icon}</Text>
     <Text style={styles.summaryLabel}>{label}</Text>

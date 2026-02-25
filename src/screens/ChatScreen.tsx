@@ -63,19 +63,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
       const lang = targetLanguage || 'Spanish';
       const userName = name || 'User';
 
-      const systemPrompt = `You are a helpful and patient Language Tutor teaching ${lang} to ${userName}.
-      Your goal is to help them practice and improve.
-      - Correct their mistakes gently but clearly.
-      - Suggest better vocabulary and alternative phrasings.
-      - Keep the conversation engaging in ${lang}, but explain complex concepts in English if they struggle.
-      - Adjust your language complexity to their level.
-      - If asked to roleplay, stay in character.`;
-
       // Per docs: https://docs.runanywhere.ai/react-native/quick-start#6-stream-responses
       const streamResult = await RunAnywhere.generateStream(text, {
-        maxTokens: 512, // Increased for better explanations
-        temperature: 0.7,
-        systemPrompt: systemPrompt,
+        maxTokens: 256, // Optimized for faster mobile generation speed
+        temperature: 0.6, // Lowered for more concise/direct language replies
       });
 
       streamCancelRef.current = streamResult.cancel;
@@ -104,8 +95,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
         text: cleanFinalText,
         isUser: false,
         timestamp: new Date(),
-        tokensPerSecond: finalResult.performanceMetrics?.tokensPerSecond,
-        totalTokens: finalResult.performanceMetrics?.totalTokens,
+        tokensPerSecond: undefined,
+        totalTokens: undefined,
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setCurrentResponse('');
@@ -169,13 +160,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({ navigation }) => {
           <Text style={styles.headerTitle}>AI Tutor</Text>
         </View>
         <ModelLoaderWidget
-          title="LLM Model Required"
-          subtitle="Download and load the language model to start chatting"
+          title="AI Tutor Core Required"
+          subtitle="Download the AI learning brain to start chatting"
           icon="chat"
           accentColor={AppColors.primary}
           isDownloading={modelService.isLLMDownloading}
           isLoading={modelService.isLLMLoading}
-          progress={modelService.llmDownloadProgress}
+          modelId="llm"
           onLoad={modelService.downloadAndLoadLLM}
         />
       </View>

@@ -1,15 +1,24 @@
-import {Database} from '@nozbe/watermelondb';
+import { Database } from '@nozbe/watermelondb';
 import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
-import {schema} from './schemas';
-import * as models from './models';
+import { schema } from './schemas';
+
+// --- NEW DOMAIN MODELS ---
+import { UserProfile } from './models/UserProfile';
+import { UserSettings } from './models/UserSettings';
+import { UserProgress } from './models/UserProgress';
+import { TutorPersona } from './models/TutorPersona';
+import { Scenario } from './models/Scenario';
+import { KnowledgeBaseEntry } from './models/KnowledgeBaseEntry';
+import { ConversationSession } from './models/ConversationSession';
+import { Message } from './models/Message';
+import { Achievement } from './models/Achievement';
+import { Quest } from './models/Quest';
+import { Leaderboard } from './models/Leaderboard';
 
 const adapter = new SQLiteAdapter({
   schema,
-  // Optional: enables migrations for future schema updates
-  // migrations,
   jsi: true, // Use JSI for better performance (RN 0.68+)
   onSetUpError: error => {
-    // Handle database setup errors
     console.error('WatermelonDB Setup Error:', error);
   },
 });
@@ -17,15 +26,17 @@ const adapter = new SQLiteAdapter({
 export const database = new Database({
   adapter,
   modelClasses: [
-    models.User,
-    models.Lesson,
-    models.Session,
-    models.SessionAnswer,
-    models.Achievement,
-    models.UserAchievement,
-    models.SkillNode,
-    models.UserSkillProgress,
-    models.SRSItem,
-    models.DailyActivity,
+    UserProfile,
+    UserSettings,
+    UserProgress,
+    TutorPersona,
+    Scenario,
+    KnowledgeBaseEntry,
+    ConversationSession,
+    Message,
+    Achievement,
+    Quest,
+    Leaderboard,
   ],
 });
+

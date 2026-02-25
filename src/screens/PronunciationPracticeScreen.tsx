@@ -243,13 +243,13 @@ export const PronunciationPracticeScreen: React.FC<PronunciationPracticeScreenPr
   if (!modelService.isSTTLoaded || !modelService.isTTSLoaded) {
     return (
       <ModelLoaderWidget
-        title="STT & TTS Models Required"
-        subtitle="Download and load speech recognition and synthesis models"
+        title="Interactive Audio Required"
+        subtitle="Download the listening and speaking engines for pronunciation feedback"
         icon="mic"
         accentColor={AppColors.accentViolet}
         isDownloading={modelService.isSTTDownloading || modelService.isTTSDownloading}
         isLoading={modelService.isSTTLoading || modelService.isTTSLoading}
-        progress={(modelService.sttDownloadProgress + modelService.ttsDownloadProgress) / 2}
+        modelId="stt"
         onLoad={async () => {
           await modelService.downloadAndLoadSTT();
           await modelService.downloadAndLoadTTS();

@@ -145,7 +145,7 @@ const App: React.FC = () => {
                 <Stack.Screen
                   name="ToolCalling"
                   component={ToolCallingScreen}
-                  options={{ title: 'Tool Calling' }}
+                  options={{ title: 'Interactive Tools' }}
                 />
                 <Stack.Screen
                   name="Practice"
@@ -170,17 +170,17 @@ const App: React.FC = () => {
                 <Stack.Screen
                   name="SpeechToText"
                   component={SpeechToTextScreen}
-                  options={{ title: 'Speech to Text' }}
+                  options={{ title: 'Listening Lab' }}
                 />
                 <Stack.Screen
                   name="TextToSpeech"
                   component={TextToSpeechScreen}
-                  options={{ title: 'Text to Speech' }}
+                  options={{ title: 'Speaking Lab' }}
                 />
                 <Stack.Screen
                   name="VoicePipeline"
                   component={VoicePipelineScreen}
-                  options={{ title: 'Voice Pipeline' }}
+                  options={{ title: 'Full Conversation' }}
                 />
                 <Stack.Screen
                   name="Progress"

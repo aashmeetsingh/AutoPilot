@@ -12,7 +12,7 @@ import LinearGradient from 'react-native-linear-gradient';
 import RNFS from 'react-native-fs';
 import { RunAnywhere } from '@runanywhere/core';
 import { AppColors } from '../theme';
-import { useModelService } from '../services/ModelService';
+import { useModelService, TTS_VOICES, SupportedLanguage } from '../services/ModelService';
 import { ModelLoaderWidget } from '../components';
 
 // Native Audio Module for better audio session management
@@ -33,11 +33,16 @@ export const TextToSpeechScreen: React.FC = () => {
   const [speechRate, setSpeechRate] = useState(1.0);
   const [currentAudioPath, setCurrentAudioPath] = useState<string | null>(null);
 
+  const languages = Object.entries(TTS_VOICES).map(([key, val]) => ({
+    id: key as SupportedLanguage,
+    name: val.name,
+  }));
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (NativeAudioModule && isPlaying) {
-        NativeAudioModule.stopPlayback().catch(() => {});
+        NativeAudioModule.stopPlayback().catch(() => { });
       }
     };
   }, [isPlaying]);
@@ -53,7 +58,7 @@ export const TextToSpeechScreen: React.FC = () => {
       // Per docs: https://docs.runanywhere.ai/react-native/tts/synthesize
       // result.audio contains base64-encoded float32 PCM
       // Using same config as sample app for consistent voice output
-      const result = await RunAnywhere.synthesize(text, { 
+      const result = await RunAnywhere.synthesize(text, {
         voice: 'default',
         rate: speechRate,
         pitch: 1.0,
@@ -79,13 +84,13 @@ export const TextToSpeechScreen: React.FC = () => {
         try {
           const playResult = await NativeAudioModule.playAudio(tempPath);
           console.log(`[TTS] Playback started, duration: ${playResult.duration}s`);
-          
+
           // Wait for playback to complete (approximate based on duration)
           setTimeout(() => {
             setIsPlaying(false);
             setCurrentAudioPath(null);
             // Clean up file
-            RNFS.unlink(tempPath).catch(() => {});
+            RNFS.unlink(tempPath).catch(() => { });
           }, (result.duration + 0.5) * 1000);
         } catch (playError) {
           console.error('[TTS] Native playback error:', playError);
@@ -111,10 +116,10 @@ export const TextToSpeechScreen: React.FC = () => {
       }
     }
     setIsPlaying(false);
-    
+
     // Clean up file
     if (currentAudioPath) {
-      RNFS.unlink(currentAudioPath).catch(() => {});
+      RNFS.unlink(currentAudioPath).catch(() => { });
       setCurrentAudioPath(null);
     }
   };
@@ -122,13 +127,13 @@ export const TextToSpeechScreen: React.FC = () => {
   if (!modelService.isTTSLoaded) {
     return (
       <ModelLoaderWidget
-        title="TTS Voice Required"
-        subtitle="Download and load the voice synthesis model"
+        title="Speaking Engine Required"
+        subtitle="Download the voice generator to hear pronunciation"
         icon="volume"
         accentColor={AppColors.accentPink}
         isDownloading={modelService.isTTSDownloading}
         isLoading={modelService.isTTSLoading}
-        progress={modelService.ttsDownloadProgress}
+        modelId="tts"
         onLoad={modelService.downloadAndLoadTTS}
       />
     );
@@ -140,6 +145,22 @@ export const TextToSpeechScreen: React.FC = () => {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
       >
+        {/* Language Selection */}
+        <View style={styles.languageSelector}>
+          <Text style={styles.controlLabel}>Voice Language</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.languageScroll}>
+            {languages.map(lang => (
+              <TouchableOpacity
+                key={lang.id}
+                style={[styles.languagePill, modelService.activeLanguage === lang.id && styles.languagePillActive]}
+                onPress={() => modelService.setActiveLanguage(lang.id)}
+              >
+                <Text style={[styles.languagePillText, modelService.activeLanguage === lang.id && styles.languagePillTextActive]}>{lang.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
         {/* Input Section */}
         <View style={styles.inputCard}>
           <TextInput
@@ -268,6 +289,32 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
+  },
+  languageSelector: {
+    marginBottom: 24,
+  },
+  languageScroll: {
+    gap: 12,
+  },
+  languagePill: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: AppColors.surfaceCard,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: AppColors.textMuted + '33',
+  },
+  languagePillActive: {
+    backgroundColor: AppColors.accentPink + '20',
+    borderColor: AppColors.accentPink,
+  },
+  languagePillText: {
+    fontSize: 14,
+    color: AppColors.textSecondary,
+    fontWeight: '600',
+  },
+  languagePillTextActive: {
+    color: AppColors.accentPink,
   },
   inputCard: {
     backgroundColor: AppColors.surfaceCard,

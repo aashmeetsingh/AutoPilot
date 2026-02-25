@@ -246,7 +246,7 @@ export const ToolCallingScreen: React.FC = () => {
         accentColor={AppColors.accentOrange}
         isDownloading={modelService.isLLMDownloading}
         isLoading={modelService.isLLMLoading}
-        progress={modelService.llmDownloadProgress}
+        modelId="llm"
         onLoad={modelService.downloadAndLoadLLM}
       />
     );

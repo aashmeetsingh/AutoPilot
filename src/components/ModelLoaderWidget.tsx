@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { AppColors } from '../theme';
+import { ProgressEmitter } from '../services/ModelService';
 
 interface ModelLoaderWidgetProps {
   title: string;
@@ -15,7 +16,7 @@ interface ModelLoaderWidgetProps {
   accentColor: string;
   isDownloading: boolean;
   isLoading: boolean;
-  progress: number;
+  modelId: string; // The ID to subscribe to for progress (e.g. 'llm', 'stt')
   onLoad: () => void;
 }
 
@@ -25,9 +26,20 @@ export const ModelLoaderWidget: React.FC<ModelLoaderWidgetProps> = ({
   accentColor,
   isDownloading,
   isLoading,
-  progress,
+  modelId,
   onLoad,
 }) => {
+  const [progress, setProgress] = React.useState(0);
+
+  React.useEffect(() => {
+    // Only subscribe when downloading to save event cycles
+    if (isDownloading) {
+      const unsubscribe = ProgressEmitter.subscribe(modelId, (newProgress) => {
+        setProgress(newProgress);
+      });
+      return unsubscribe;
+    }
+  }, [isDownloading, modelId]);
   const getIconEmoji = () => {
     if (title.includes('LLM')) return '🤖';
     if (title.includes('STT')) return '🎤';
@@ -71,8 +83,8 @@ export const ModelLoaderWidget: React.FC<ModelLoaderWidgetProps> = ({
         )}
 
         {!isDownloading && !isLoading && (
-          <TouchableOpacity 
-            onPress={onLoad} 
+          <TouchableOpacity
+            onPress={onLoad}
             activeOpacity={0.8}
             style={[styles.button, { backgroundColor: accentColor }]}
           >
